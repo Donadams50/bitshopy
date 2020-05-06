@@ -26,6 +26,18 @@ const axios = require('axios')
 // require("./app/Transactions/transactions.routes")(app)
 // require("./app/Notifications/notification.routes")(app)
 
+app.get('/', async(req, res) =>{
+    try{
+      
+        res.status(200).send("hi Olasumbo")
+    }catch(err){
+        console.log(err)
+        res.status(500).send({message:"Error while retrieving config"}) 
+        
+    }
+  
+    
+})
 
 // Connect to port
 const port = process.env.PORT || 3000     
