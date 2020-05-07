@@ -52,7 +52,8 @@ console.log(req.body)
                         member.password = await passwordUtils.hashPassword(req.body.password.toLowerCase());
                         const emailFrom = 'Bitshopy   <noreply@astrapay.com.com>';
                         const subject = 'Verification link';                      
-                        const hostUrl = " 192.168.1.114:8082"
+                        //const hostUrl = " 192.168.43.117:8080"
+                          const hostUrl = "boring-snyder-80af72.netlify.app"
                         const to = req.body.username;
                         const emailTo = req.body.email.toLowerCase();
                         const link = `${hostUrl}/verifyuser?code=${member.code}&username=${to}`;
@@ -211,7 +212,8 @@ exports.forgotPassword = async(req,res)=>{
            const code = uuid.v4()
            const emailFrom = 'Bitshopy   <noreply@astrapay.com.com>';
            const subject = 'Forgot password';                      
-           const hostUrl = " 192.168.1.113:3000"
+          //const hostUrl = " 192.168.43.117:8080"
+         const hostUrl = "boring-snyder-80af72.netlify.app" 
            const to = req.body.username;
            const emailTo = req.body.email.toLowerCase();
            const link = `${hostUrl}/forgotpasswordverification?email=${emailTo}&username=${to}&code=${code}`;
