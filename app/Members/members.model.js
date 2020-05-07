@@ -109,9 +109,9 @@ Members.create = async function(newMember){
 Members.findByEmail= async function(email){
     try{
         const result = await sql.query('SELECT * FROM member_authentication_table WHERE email = ?', [email])
-        console.log(result[0])
+     //   console.log(result[0])
             const data=result[0]
-            console.log('-------------------------------------------------------CHECKING IF USERNAME EXISTS---------------')
+            console.log('-------------------------------------------------------CHECKING IF USERNAME EXISTS auth table---------------')
             return data
         
     }catch(err){
@@ -127,7 +127,69 @@ Members.findDetailsByEmail= async function(email){
     try{
         const result = await sql.query('SELECT * from profile where email =?', [email])
         const data=result[0]
-        console.log(data)
+      //  console.log(data)
+        console.log('-------------------------------------------------------CHECKING IF USERNAME EXISTS details---------------')
+        return data
+    }catch(err){
+        console.log(err)
+        console.log('--------------------------------------------err--------------------------------------------------------')
+        return (err)
+    }
+}
+
+//set new password
+Members.updatePassword= async function(email, password){
+    try{
+        const result = await sql.query('update member_authentication_table set password=? where email=?',[password,email])
+        const data=result[0]
+        console.log('-------------------------------------------------------CHECKING IF USERNAME EXISTS---------------')
+        return data
+    }catch(err){
+        console.log(err)
+        console.log('--------------------------------------------err--------------------------------------------------------')
+        return (err)
+    }
+}
+
+
+
+//save forgot password code
+Members.saveForgetPasswordCode= async function(email, code){
+    try{
+        const result = await sql.query('update profile set forgotPasswordCode=? where email=?',[code,email])
+        const data=result[0]
+        console.log('-------------------------------------------------------CHECKING IF USERNAME EXISTS---------------')
+        return data
+    }catch(err){
+        console.log(err)
+        console.log('--------------------------------------------err--------------------------------------------------------')
+        return (err)
+    }
+}
+
+// get forgot password code
+// Get full members details by email
+Members.findForgotPasswordCode= async function(code, email){
+    try{
+        const result = await sql.query('SELECT * from profile where forgotPasswordCode =? AND email=?', [code, email])
+        const data=result[0]
+      //  console.log(data)
+        console.log('-------------------------------------------------------CHECKING IF USERNAME EXISTS details---------------')
+        return data
+    }catch(err){
+        console.log(err)
+        console.log('--------------------------------------------err--------------------------------------------------------')
+        return (err)
+    }
+}
+
+//clear forgot password code
+
+Members.clearForgotPasswordCode= async function( code, email){
+    try{
+        const code1= "";
+        const result = await sql.query('update profile set forgotPasswordCode=? where email=? AND code=?',[code1,email, code])
+        const data=result[0]
         console.log('-------------------------------------------------------CHECKING IF USERNAME EXISTS---------------')
         return data
     }catch(err){

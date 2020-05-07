@@ -15,7 +15,14 @@ app.use(express.static(path.join(__dirname, 'public')));
 const axios = require('axios')
 
 
-
+// DB = bitshopy
+// HOST=localhost
+// USER =root
+// PASSWORD= ""
+// DB = heroku_1f926014f675acc
+// HOST= us-cdbr-east-06.cleardb.net
+// USER =b58809fa1a4d8a
+// PASSWORD= e09609c9
 // require("./app/Community/community.routes.js")(app) 
  require("./app/Members/members.routes.js")(app)
 // require("./app/Claims/claims.routes.js")(app)
@@ -26,18 +33,18 @@ const axios = require('axios')
 // require("./app/Transactions/transactions.routes")(app)
 // require("./app/Notifications/notification.routes")(app)
 
-app.get('/', async(req, res) =>{
-    try{
+// app.get('/', async(req, res) =>{
+//     try{
       
-        res.status(200).send("hi Olasumbo")
-    }catch(err){
-        console.log(err)
-        res.status(500).send({message:"Error while retrieving config"}) 
+//         res.status(200).send("hi Olasumbo")
+//     }catch(err){
+//         console.log(err)
+//         res.status(500).send({message:"Error while retrieving config"}) 
         
-    }
+//     }
   
     
-})
+// })
 
 // Connect to port
 const port = process.env.PORT || 3000     

@@ -26,7 +26,7 @@ console.log(req.body)
         }else{
             const member = new Members ({
                 username:username,
-                email:email, 
+                email:email.toLowerCase(), 
                 password:password,
                 isVerified: false,
                 code: uuid.v4(),
@@ -39,7 +39,7 @@ console.log(req.body)
             });
             try{
                 // check if user exists
-                const isUserExist = await Members.findByUsername(req.body.username, req.body.email )
+                const isUserExist = await Members.findByUsername(req.body.username, req.body.email.toLowerCase() )
                 if (isUserExist.length>0){
                     res.status(400).send({message:"Username OR Email already exists"})
                 }else{
@@ -52,10 +52,10 @@ console.log(req.body)
                         member.password = await passwordUtils.hashPassword(req.body.password.toLowerCase());
                         const emailFrom = 'Bitshopy   <noreply@astrapay.com.com>';
                         const subject = 'Verification link';                      
-                        const hostUrl = " 192.168.1.113:3000"
+                        const hostUrl = " 192.168.1.114:8082"
                         const to = req.body.username;
-                        const emailTo = req.body.email;
-                        const link = `${hostUrl}/verification?code=${member.code}&username=${to}`;
+                        const emailTo = req.body.email.toLowerCase();
+                        const link = `${hostUrl}/verifyuser?code=${member.code}&username=${to}`;
                         sentemail =  await  processEmail(emailFrom, emailTo, subject, link);
                           console.log(sentemail)
                     if(sentemail === true){
@@ -64,10 +64,11 @@ console.log(req.body)
                         if (savedmember.insertId>0){ 
                             res.status(201).send({message:"member created"})
                         }else{
-                            res.status(400).send({message:"Error while creating member "})
+                            res.status(500).send({message:"Error while creating member "})
                         }
                     }
                   else{
+                    res.status(500).send({message:"Error while creating member "})
                  console.log("Email not sent , network error");
                   }
                        
@@ -76,7 +77,7 @@ console.log(req.body)
                 }
             }catch(err){
                 console.log(err)
-                res.status(400).send({message:"Error while creating member "})
+                res.status(500).send({message:"Error while creating member "})
             }
         }
     }else{
@@ -102,7 +103,7 @@ exports.verifyEmail = async(req, res) =>{
             if (verifyemail.length > 0){
               //  console.log(verifyemail[0])
                 if(verifyemail[0].isVerified === 1){
-                    res.status(200).send({message:"this user has been verified ",  verifyemail});
+                    res.status(409).send({message:"this user has been verified ",  verifyemail});
                     
 
                 }else{
@@ -160,15 +161,16 @@ exports.signIn = async(req,res)=>{
             res.status(400).send({message:"Required fields cannot be empty"})
         }else{
             try{
-                const user = await Members.findByEmail(email)
+                const user = await Members.findByEmail(email.toLowerCase())
                 console.log(user)
                 if (user.length<1){
                     res.status(404).send({message:"User not found"})
                 }else{
                     const retrievedPassword = user[0].password
-                    const userDetails = await Members.findDetailsByEmail(req.body.email)
+                    const userDetails = await Members.findDetailsByEmail(req.body.email.toLowerCase())
                     const {id , username,  email}= userDetails
                     const isMatch = await passwordUtils.comparePassword(password.toLowerCase(), retrievedPassword);
+                    console.log(isMatch)
                     if (isMatch){
                         const tokens = signToken(id,username,email) 
                          const user = userDetails[0]
@@ -177,7 +179,7 @@ exports.signIn = async(req,res)=>{
                         user.token = tokens
                         res.status(200).send(user)
                     }else{
-                        res.status(405).json({message:"Incorrect Login Details"})
+                        res.status(400).json({message:"Incorrect Login Details"})
                     }
                 }
                 
@@ -190,4 +192,91 @@ exports.signIn = async(req,res)=>{
         res.status(500).send({message:"Enter the required fields"})
     }
     
+}
+
+exports.forgotPassword = async(req,res)=>{
+    let {email, username} = req.body
+    console.log(username)
+    console.log(email)
+    try{
+        const isCred = await Members.findByEmail(email.toLowerCase())
+        const isMember = await Members.findDetailsByEmail(email.toLowerCase())
+        console.log(isCred)
+        console.log(isMember)
+        if (isCred.length>0 && isMember.length>0){
+            //const randomstring = Math.random().toString(36).slice(-8); 
+            // console.log('random string is '+ randomstring)
+            //newpassword = await passwordUtils.hashPassword(randomstring.toLowerCase());
+           // const updatePassword = await Members.updatePassword(username, newpassword)
+           const code = uuid.v4()
+           const emailFrom = 'Bitshopy   <noreply@astrapay.com.com>';
+           const subject = 'Forgot password';                      
+           const hostUrl = " 192.168.1.113:3000"
+           const to = req.body.username;
+           const emailTo = req.body.email.toLowerCase();
+           const link = `${hostUrl}/forgotpasswordverification?email=${emailTo}&username=${to}&code=${code}`;
+           sentemail =  await  processEmail(emailFrom, emailTo, subject, link);
+             console.log(sentemail)
+       if(sentemail === true){
+        const saveForgetPasswordCode = await Members.saveForgetPasswordCode(email.toLowerCase() , code)
+        console.log(saveForgetPasswordCode)
+        if (saveForgetPasswordCode.affectedRows===1){
+         
+            res.status(201).send({message:" Verification Email sent "})
+        }else{
+            res.status(500).send({message:"Error saving forgot password code."})
+        }   
+        
+          
+       }
+     else{
+    console.log("Email not sent , network error");
+     }
+          
+     
+       
+        }else{
+            res.status(400).send('User does not exist')
+        }
+        
+    }catch(err){
+        console.log(err)
+        res.status(500).json(err)
+    }
+}
+
+// set new password
+
+exports.setnewPassword = async(req,res)=>{
+    let {email, username, password, code} = req.body
+    console.log(username)
+    console.log(email)
+    console.log(password)
+    try{
+        const isCred = await Members.findByEmail(email.toLowerCase())
+        const isMember = await Members.findDetailsByEmail(email.toLowerCase())
+        if (isCred.length>0 && isMember.length>0){
+            const isCodeValid = await Members.findForgotPasswordCod(code,email.toLowerCase())
+            if (isCodeValid.length>0){
+            newpassword = await passwordUtils.hashPassword(password.toLowerCase());
+           const updatePassword = await Members.updatePassword(email.toLowerCase(), newpassword)
+           if (updatePassword.affectedRows===1){
+            const clearForgotPasswordCode = await Members.clearForgotPasswordCode(code, email.toLowerCase())  
+                res.status(200).send({message:"Password updated"})
+                    }else{
+                        res.status(500).send({message:"Password forgot not updated"})
+                    }   
+                        
+                }else{
+                    res.status(400).send({message:"Forgot password code not valid"})
+                }
+       
+        }else{
+            res.status(400).send('User does not exist')
+        }
+        
+    }catch(err){
+        console.log(err)
+        res.status(500).json(err)
+    }
 }

@@ -7,11 +7,15 @@ module.exports = app =>{
     app.post("/member", member.create); 
 
        // to register new organization
-       app.get("/verification", member.verifyEmail)
+      app.get("/verifyuser", member.verifyEmail)
     
 
        // Sign In member
     app.post("/authenticateuser", member.signIn); 
+
+    app.post("/forgotpassword", member.forgotPassword); 
+    
+    app.post("/setnewpassword", member.setnewPassword); 
     // Sign In member
   //  app.post("/user_auth", member.signIn); 
 
@@ -24,18 +28,5 @@ module.exports = app =>{
     //  // check username availablity
     //  app.get("/members/name/availability/:username", member.findUsername)
 
-    // //  update a member
-    // app.put("/members", verifyToken, member.updateMember)
-
-    // // Update member roles
-    // app.post('/members/roles', verifyToken, member.updateRole)
-
-    // // Count members
-    // app.get('/members/count/memberCount', member.count)
-
-    // // reset password
-    // app.post("/members/resetPassword", verifyToken, member.resetPassword)
-
-    // forgot password
-    // app.post("/members/forgotpassword", member.forgotPassword)    
+     
 }
