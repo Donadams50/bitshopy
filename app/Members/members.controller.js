@@ -240,7 +240,7 @@ exports.forgotPassword = async(req,res)=>{
         console.log(saveForgetPasswordCode)
         if (saveForgetPasswordCode.affectedRows===1){
          
-            res.status(201).send({message:" Verification Email sent "})
+            res.status(200).send({message:" Verification Email sent "})
         }else{
             res.status(500).send({message:"Error saving forgot password code."})
         }   

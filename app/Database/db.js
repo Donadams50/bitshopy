@@ -5,7 +5,8 @@ const dotenv=require('dotenv');
 dotenv.config();
 // Create Connection to the database
 const db = mysql.createPool(
-    process.env.CLEARDB_DATABASE_URL
+  
+     process.env.CLEARDB_DATABASE_URL
 );
 // console.log(db)
 if(db.state === 'disconnected'){
