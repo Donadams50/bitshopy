@@ -7,11 +7,12 @@ const Members = function(members){
     this.level=members.level
     this.isVerified=members.isVerified
     this.password=members.password
-    this.token = members.token,
-    this.ratings= members.ratings,
-    this.walletBalanceUsd= members.walletBalanceUsd,
-    this.walletBalanceBtc= members.walletBalanceBtc,
+    this.token = members.token
+    this.ratings= members.ratings
+    this.walletBalanceUsd= members.walletBalanceUsd
+    this.walletBalanceBtc= members.walletBalanceBtc
     this.noOfRatings = members.noOfRatings
+    this.noOfTransactions= members.noOfTransactions
  
     // this.id=members.id
     // this.gender=members.gender
@@ -27,6 +28,20 @@ Members.findByUsername= async function(username, email){
         const data=result[0]
         console.log(data)
         console.log('-------------------------------------------------------CHECKING IF USERNAME EXISTS---------------')
+        return data
+    }catch(err){
+        console.log(err)
+        console.log('--------------------------------------------err--------------------------------------------------------')
+        return (err)
+    }
+}
+// find level details
+Members.findLevelDetails= async function(level){
+    try{
+        const result = await sql.query('SELECT * from level where level =? ', [level])
+        const data=result[0]
+        console.log(data)
+        console.log('-------------------------------------------------------CHECKING IF level EXISTS---------------')
         return data
     }catch(err){
         console.log(err)
@@ -53,7 +68,7 @@ Members.create = async function(newMember){
     try
     {
         console.log(newMember)
-         const result = await connection.query('INSERT into profile SET username=?, level=?, code=?, ratings=?, isVerified=?, walletBalanceUsd=?, walletBalanceBtc=?, noOfRatings=?, email=?', [newMember.username, newMember.level, newMember.code, newMember.ratings, newMember.isVerified, newMember.walletBalanceUsd, newMember.walletBalanceBtc, newMember.noOfRatings, newMember.email])
+         const result = await connection.query('INSERT into profile SET username=?, level=?, code=?, ratings=?, isVerified=?, walletBalanceUsd=?, walletBalanceBtc=?, noOfRatings=?, email=?, noOfTransactions=?', [newMember.username, newMember.level, newMember.code, newMember.ratings, newMember.isVerified, newMember.walletBalanceUsd, newMember.walletBalanceBtc, newMember.noOfRatings, newMember.email, newMember.no])
          if (result[0].insertId){
              await connection.query('INSERT INTO member_authentication_table SET email=?, password=?', [newMember.email, newMember.password])
              console.log('---------------------------------Credentials filled------------------------------------------------------------------------------------------------------')

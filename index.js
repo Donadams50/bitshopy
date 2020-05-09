@@ -15,17 +15,13 @@ app.use(express.static(path.join(__dirname, 'public')));
 const axios = require('axios')
 
 
-// DB = bitshopy
-// HOST=localhost
-// USER =root
-// PASSWORD= ""
-// DB = heroku_1f926014f675acc
-// HOST= us-cdbr-east-06.cleardb.net
-// USER =b58809fa1a4d8a
-// PASSWORD= e09609c9
-// require("./app/Community/community.routes.js")(app) 
+
+
+
+
+
  require("./app/Members/members.routes.js")(app)
-// require("./app/Claims/claims.routes.js")(app)
+ require("./app/Items/items.routes.js")(app)
 // require("./app/Consultants/consultant.routes.js")(app)
 // require("./app/Subscription/subscription.routes.js")(app)
 // require("./app/Consultants/consultant.routes")(app)

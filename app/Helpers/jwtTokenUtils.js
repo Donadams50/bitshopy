@@ -3,9 +3,9 @@ const dotenv=require('dotenv');
 
 dotenv.config();
 
-exports.signToken= (userId, userUsername, userEmail)=> {
+exports.signToken= (userId, userUsername, userEmail, userLevel)=> {
     const key = process.env.SECRET_KEY;
-    const token = jwt.sign({ id: userId, username:userUsername,email: userEmail }, key, { expiresIn: '1h' });
+    const token = jwt.sign({ id: userId, username:userUsername,email: userEmail, level:userLevel }, key, { expiresIn: '1h' });
     return token;
   }
 
@@ -20,7 +20,7 @@ exports.signToken= (userId, userUsername, userEmail)=> {
           console.log(error)
           res.status(401).json({ status: 401, error: 'Unauthorized' });
         }else{
-          req.decoded = decoded;
+           req.user = decoded;
           next();
         }
        

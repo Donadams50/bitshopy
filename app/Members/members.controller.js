@@ -1,4 +1,5 @@
 const Members = require('../Members/members.model.js');
+const Items = require('../Items/items.model.js');
 //const Consultant = require('../Consultants/consultant.model');
 // const Community = require('../Community/community.model.js')
 // const Claims = require('../Claims/claims.model')
@@ -34,7 +35,8 @@ console.log(req.body)
                 noOfRatings: 0,
                 walletBalanceUsd:0.0,
                 walletBalanceBtc: 0.0,
-                level: 1
+                level: 1,
+                noOfTransactions:0
 
             });
             try{
@@ -52,12 +54,14 @@ console.log(req.body)
                         member.password = await passwordUtils.hashPassword(req.body.password.toLowerCase());
                         const emailFrom = 'Bitshopy   <noreply@astrapay.com.com>';
                         const subject = 'Verification link';                      
-                        //const hostUrl = " 192.168.43.117:8080"
-                          const hostUrl = "boring-snyder-80af72.netlify.app"
+                      //  const hostUrl = " 192.168.43.70:8080"
+                        const hostUrl2 = "http://boring-snyder-80af72.netlify.app/#" 
+                          const hostUrl = "boring-snyder-80af72.netlify.app/#"
                         const to = req.body.username;
                         const emailTo = req.body.email.toLowerCase();
                         const link = `${hostUrl}/verifyuser?code=${member.code}&username=${to}`;
-                        sentemail =  await  processEmail(emailFrom, emailTo, subject, link);
+                        const link2 = `${hostUrl2}/verifyuser?code=${member.code}&username=${to}`;
+                        sentemail =  await  processEmail(emailFrom, emailTo, subject, link, link2);
                           console.log(sentemail)
                     if(sentemail === true){
                      
@@ -136,11 +140,11 @@ exports.verifyEmail = async(req, res) =>{
     
 }
 // process email
-async function processEmail(emailFrom, emailTo, subject, text ){
+async function processEmail(emailFrom, emailTo, subject, text, text2 ){
     try{
         //create org details
         // await delay();
-       const sendmail =  await sendemail.emailUtility(emailFrom, emailTo, subject, text);
+       const sendmail =  await sendemail.emailUtility(emailFrom, emailTo, subject, text, text2);
      //  console.log(sendmail)
         return sendmail
     }catch(err){
@@ -169,14 +173,24 @@ exports.signIn = async(req,res)=>{
                 }else{
                     const retrievedPassword = user[0].password
                     const userDetails = await Members.findDetailsByEmail(req.body.email.toLowerCase())
-                    const {id , username,  email}= userDetails
+                    //console.log(userDetails)
+                    const {id , username,  email, level}= userDetails[0]
                     const isMatch = await passwordUtils.comparePassword(password.toLowerCase(), retrievedPassword);
                     console.log(isMatch)
                     if (isMatch){
-                        const tokens = signToken(id,username,email) 
+                        const tokens = signToken(id, username, email, level) 
                          const user = userDetails[0]
-                        // const getPriviledges = await Members.findById(userDetails[0].Id)
-                        // user.priviledges=getPriviledges[0].priviledges
+                          const getPriviledges = await Members.findLevelDetails(userDetails[0].level)
+                         
+                          const noOfOffer = await Items.findNumberOfOffer(userDetails[0].id)
+                          if ( userDetails[0].noOfTransactions > 5 || noOfOffer <= 10  ){
+                            user.makeoffer=true
+                          }
+                          if ( userDetails[0].noOfTransactions >= getPriviledges[0].transactionLimit  ){
+                            user.transactionLimit=true
+                          }
+
+                        user.priviledges=getPriviledges[0]
                         user.token = tokens
                         res.status(200).send(user)
                     }else{
@@ -212,12 +226,14 @@ exports.forgotPassword = async(req,res)=>{
            const code = uuid.v4()
            const emailFrom = 'Bitshopy   <noreply@astrapay.com.com>';
            const subject = 'Forgot password';                      
-          //const hostUrl = " 192.168.43.117:8080"
-         const hostUrl = "boring-snyder-80af72.netlify.app" 
+         // const hostUrl = " 192.168.43.70:8080"
+        const hostUrl2 = "http://boring-snyder-80af72.netlify.app/#" 
+        const hostUrl = "boring-snyder-80af72.netlify.app/#" 
            const to = req.body.username;
            const emailTo = req.body.email.toLowerCase();
            const link = `${hostUrl}/forgotpasswordverification?email=${emailTo}&username=${to}&code=${code}`;
-           sentemail =  await  processEmail(emailFrom, emailTo, subject, link);
+           const link2 = `${hostUrl2}/forgotpasswordverification?email=${emailTo}&username=${to}&code=${code}`;
+           sentemail =  await  processEmail(emailFrom, emailTo, subject, link, link2);
              console.log(sentemail)
        if(sentemail === true){
         const saveForgetPasswordCode = await Members.saveForgetPasswordCode(email.toLowerCase() , code)

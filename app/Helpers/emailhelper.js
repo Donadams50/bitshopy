@@ -2,7 +2,7 @@ const nodemailer = require("nodemailer");
 const hbs = require('nodemailer-express-handlebars')
 let responseGot = {}
 
-exports.emailUtility= async (emailFrom, emailTo, emailSubject, emailText ) =>{
+exports.emailUtility= async (emailFrom, emailTo, emailSubject, emailText, emailText2 ) =>{
    
         let resp= await wrapedSendMail();
          return resp;
@@ -38,7 +38,8 @@ exports.emailUtility= async (emailFrom, emailTo, emailSubject, emailText ) =>{
             template: 'index',
             context: {
                 name: emailTo,
-                link:emailText 
+                link:emailText,
+                link2: emailText2
             }
         }; 
 

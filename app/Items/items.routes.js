@@ -4,9 +4,15 @@ module.exports = app =>{
     const jwtTokenUtils = require('../Helpers/jwtTokenUtils')
     const { verifyToken } = jwtTokenUtils;
     // Create a new item
-    app.post("/item", verifyToken, item.create); 
+    app.post("/getwishlistdetails", verifyToken, item.create); 
 
+    app.post("/offer", verifyToken, item.createOffer); 
+  
+    // get all members
     
+    app.get("/alloffer", verifyToken, item.getAllOffer)
+    // offer qualified for
+    app.get("/useroffer/:userLevel", verifyToken, item.getAllOfferQualifiedFor)
     
 
  
