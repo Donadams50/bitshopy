@@ -183,12 +183,21 @@ exports.signIn = async(req,res)=>{
                           const getPriviledges = await Members.findLevelDetails(userDetails[0].level)
                          
                           const noOfOffer = await Items.findNumberOfOffer(userDetails[0].id)
-                          if ( userDetails[0].noOfTransactions > 5 || noOfOffer <= 10  ){
+                          if ( userDetails[0].noOfTransactions > 5 || userDetails[0].level === 0){
                             user.makeOfferAsShopper=true
-                          }else{
+                            user.maximumDiscountAsShopper= 100
+                            user.maximumOfferPrice= 999
+                            user.minimumOfferPrice= 3.99
+                          }else if( noOfOffer <= 10  ){
+                            user.makeOfferAsShopper=true
+                            user.maximumDiscountAsShopper= 10
+                            user.maximumOfferPrice= 999
+                            user.minimumOfferPrice= 3.99
+                          }
+                          else{
                             user.makeOfferAsShoper=false
                           }
-                          if ( userDetails[0].noOfTransactions <= getPriviledges[0].transactionLimit  ){
+                          if ( userDetails[0].noOfTransactions <= getPriviledges[0].transactionLimit ||userDetails[0].level  === 0 || userDetails[0].level=== 5 ){
                             user.makeTransactionAsEarners=true
                           }else{
                             user.makeTransactionAsEarners=false 

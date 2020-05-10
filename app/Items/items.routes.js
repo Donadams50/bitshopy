@@ -11,8 +11,15 @@ module.exports = app =>{
     // get all members
     
     app.get("/alloffer", verifyToken, item.getAllOffer)
+
+
     // offer qualified for
-    app.get("/useroffer/:userLevel", verifyToken, item.getAllOfferQualifiedFor)
+    app.get("/useroffer", verifyToken, item.getAllOfferQualifiedFor)
+
+    // all items in a offer qualified for
+    app.get("/itemsoffer/:offerId", verifyToken, item.getAllItemsInOffer)
+    // accept offer
+    app.post("/acceptoffer", verifyToken, item.accepteOffer);
     
 
  

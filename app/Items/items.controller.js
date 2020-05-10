@@ -7,6 +7,7 @@ const axios = require('axios');
 const jsdom = require("jsdom");
 const { JSDOM } = jsdom;
 const winston = require('winston');
+const uuid = require('uuid')
 
 const logger = winston.createLogger({
     level: 'info',
@@ -54,7 +55,11 @@ console.log(req.body)
             
             try{ 
               
-  
+                const isWishListExist = await Members.findByWishlistId(wishlistId , wishlistUrl)
+                if (isWishListExist.length>0){
+                    res.status(400).send({message:"wishlist already exist"})
+                }
+                   else{
                
 
                 let re4 = /\w{13}/g;       
@@ -69,9 +74,9 @@ console.log(req.body)
                // console.log(found4[0]); 
               
              
-            //  https://www.amazon.com/hz/wishlist/ls/3CFEKJ4MI59IW?ref_=wl_share 
+            //  https://www.amazon.com/hz/wishlist/ls/V30TKCJELQ06?ref_=wl_share 
              
-              let com = ".com"
+            
                let format ="json"
                let status = "unpurchased"
            get_wishlist = await axios.get('http://www.justinscarpetti.com/projects/amazon-wish-lister/api/?id='+wid+'&format='+format+'&reveal='+status+'' )
@@ -102,7 +107,7 @@ console.log(req.body)
                                 }
                                  
                        
-
+                            }
     
                     
                 
@@ -125,20 +130,31 @@ exports.createOffer = async(req,res)=>{
         res.status(400).send({message:"Content cannot be empty"});
     }
 console.log(req.body)
-    const {  wishlistItems, wishlistId, noOfItems, shopperId, discount, originalTotalPrice, totalPay, bitshopyFee, savedFee, taxPaid, onlyPrime } = req.body;
-    if (wishlistItems && wishlistId && noOfItems && shopperId && discount && originalTotalPrice && totalPay && bitshopyFee && savedFee){
-        if ( wishlistItems ==="" || wishlistId ==="" || noOfItems==="" || shopperId==="" || discount==="" || originalTotalPrice==="" || totalPay==="" || bitshopyFee==="" || savedFee==="" ){
+           
+    const {  wishlistItems, noOfItems, shopperId, discount, originalTotalPrice, totalPay, bitshopyFee, savedFee, taxPaid, onlyPrime , shippingFee, taxFee, wishlistUrl} = req.body;
+   
+    let re4 = /\w{13}/g;       
+    let found4 = wishlistUrl.match(re4);
+    if(found4 === null){
+        let re5= /\w{12}/g;       
+    let found5 = wishlistUrl.match(re5);
+    wishlistId = found5[0]
+    }else{
+        wishlistId = found4[0]
+    }
+    if (wishlistItems && wishlistId && noOfItems && shopperId && discount && originalTotalPrice && totalPay && bitshopyFee && savedFee && wishlistUrl){
+        if ( wishlistItems ==="" || wishlistId ==="" || noOfItems==="" || shopperId==="" || discount==="" || originalTotalPrice==="" || totalPay==="" || bitshopyFee==="" || savedFee===""||wishlistUrl==="" ){
             res.status(400).send({
                 message:"Incorrect entry format"
             });
         }else{
             
             try{ 
-                let re4 = /\w{13}/g;       
-                let found4 = wishlistId.match(re4);
-                console.log(found4[0]); 
-
-                const createoffer = await Items.createOffer(wishlistId, noOfItems, shopperId, discount, originalTotalPrice, totalPay, bitshopyFee, savedFee, taxPaid, onlyPrime)
+                const isWishListExist = await Members.findByWishlistId(wishlistId , wishlistUrl)
+                if (isWishListExist.length>0){
+                    res.status(400).send({message:"wishlist already exist"})
+                }else{
+                const createoffer = await Items.createOffer(wishlistId, noOfItems, shopperId, discount, originalTotalPrice, totalPay, bitshopyFee, savedFee, taxPaid, onlyPrime, shippingFee, taxFee,wishlistUrl )
 
               // console.log(saveduser)
             if (createoffer.insertId >=1){
@@ -149,15 +165,15 @@ console.log(req.body)
                 
                   }
                   res.status(201).send({
-                                message:"beneficiaries added to table"
+                                message:"offer created"
                             })
             }else{
                 console.log("not added")
                 }
 
-                                 res.status(200).send(wishList)
+                        
    
-
+            }
 
                     
                 
@@ -214,47 +230,48 @@ exports.getAllOffer = async(req, res) =>{
     
 }
 
-// GET all group
+// GET all offer qualified for by a single user
 exports.getAllOfferQualifiedFor= async(req, res) =>{
-  
+  console.log(req.user)
     try{
-        if(req.params.userLevel === 1){
+        if(req.user.level === 1){
              discount = 30;
              orderSizeLimit = 75
-        }else if(req.params.userLevel === 2){
+        }else if(req.user.level === 2){
             discount = 20;
             orderSizeLimit = 150
         }
-        else if(req.params.userLevel === 3){
+        else if(req.user.level === 3){
             discount = 150;
             orderSizeLimit = 300
         }
-        else if(req.params.userLevel === 4){
+        else if(req.user.level === 4){
             discount = 10;
             orderSizeLimit = 500
         }
-        else if(req.params.userLevel === 5){
+        else if(req.user.level === 5){
             discount = 5;
             orderSizeLimit = 999
         }
-      
+        else if(req.user.level === 0){
+            discount = 0;
+            orderSizeLimit = 10000000
+        }
             const allOffer = await Items.getAllOfferQualifiedFor(discount, orderSizeLimit)
+            console.log(allOffer)
             if (allOffer.length > 0){
                 logger.log({
                     level: 'info',
                     message: 'group added to database'
                   });
-             //   console.log(allGroup.length)
+                console.log(allOffer.length)
                 res.status(200).send(allOffer)
             }else if(allOffer.length=== 0){
            //     console.log(allGroup.length)
                 res.status(204).send("No offer created yet")
             }
             else{
-                logger.log({
-                    level: 'info',
-                    message: 'Error while getting offer'
-                  });
+                
                 res.status(400).send({message:"error while getting offer"}) 
             }
            
@@ -270,6 +287,36 @@ exports.getAllOfferQualifiedFor= async(req, res) =>{
   
     
 }
+// get all item in a offer
+exports.getAllItemsInOffer= async(req, res) =>{
+  
+    try{
+            const allOffrItem = await Items.getAllItemsInOffer(req.param.offerId)
+            if (allOffer.length > 0){
+              
+                res.status(200).send(allOffrItem)
+            }else if(allOffrItem.length=== 0){
+           //     console.log(allGroup.length)
+                res.status(204).send("No item in this wishlist")
+            }
+            else{
+                
+                res.status(400).send({message:"error while getting items in this  offer"}) 
+            }
+           
+           
+          
+        }
+       
+    catch(err){
+     console.log(err)
+        res.status(500).send({message:"issues while retrieving offers"})
+        
+    }
+  
+    
+}
+
 //  function to create group one after the other
 async function PersistOneByOne2(wishlistItems, wishlistTableId, wishlistId ){
  
@@ -361,3 +408,56 @@ async function PersistOneByOne2(wishlistItems, wishlistTableId, wishlistId ){
   }
 
 }  
+
+// accept offer
+// create member
+exports.accepteOffer = async(req,res)=>{
+    if (!req.body){
+        res.status(400).send({message:"Content cannot be empty"});
+    }
+console.log(req.body)
+
+   console.log( req.user )
+    //console.log(decoded)
+    const { amazonOrderId, shopperId, earnerId, wishlistTableId  } = req.body;
+   // var userId = decoded.id;
+    if (amazonOrderId &&shopperId && earnerId && wishlistTableId ){
+        if ( amazonOrderId==="" ||shopperId  ==="" || earnerId==="" || wishlistTableId ===""){
+            res.status(400).send({
+                message:"Incorrect entry format"
+            });
+        }else{
+            
+            try{ 
+ 
+        
+             let   bitshopyOrderId = uuid.v4();
+             let   status = "Processing Order"
+            
+          
+             const createorder = await Items.createOrder(amazonOrderId, shopperId, earnerId, wishlistTableId,  bitshopyOrderId,  status)
+             if (createorder.insertId > 0){
+               console.log("yes inserted")
+             }else{
+              console.log("not inserted")
+             }
+            
+                                    res.status(200).send(finalWishlist)
+                               
+                                 
+                       
+
+    
+                    
+                
+            }catch(err){
+                console.log(err)
+                res.status(500).send({message:"Error while accepting offer "})
+            }
+        }
+    }else{
+        res.status(400).send({
+            message:"Incorrect entry format"
+        });
+    }
+}
