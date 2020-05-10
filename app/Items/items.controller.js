@@ -77,23 +77,30 @@ console.log(req.body)
            get_wishlist = await axios.get('http://www.justinscarpetti.com/projects/amazon-wish-lister/api/?id='+wid+'&format='+format+'&reveal='+status+'' )
 
          // get_wishlist2 = await scraper.scrape(''+url+'' )
+             let totalItemAmount = 0;
              let  wishList = [];
-          let     finalWishlist ={}
+             let finalWishlist ={}
                  finalWishlist.wishlistValid = true
                for( var i = 0; i < get_wishlist.data.length; i++){
                     
 
                             basic= await PersistOneByOne(get_wishlist.data[i]);
-                            console.log(basic.itemValid)
+                            console.log(basic.price)
+                            totalItemAmount = parseFloat(totalItemAmount) + parseFloat(basic.price);
+                            console.log(totalItemAmount)
                            if(basic.itemValid === false){
                                finalWishlist.wishlistValid = false
                            }
                             wishList.push(basic);   
                             }
-
+                            finalWishlist.totalItemAmount = totalItemAmount;
                             finalWishlist.wishlistItems = wishList
-
-                                 res.status(200).send(finalWishlist)
+                                if (finalWishlist.wishlistValid === true){
+                                    res.status(200).send(finalWishlist)
+                                }else{
+                                    res.status(400).send({message:"One of the item does not have a single price ", finalWishlist})
+                                }
+                                 
                        
 
     
@@ -293,7 +300,7 @@ async function PersistOneByOne2(wishlistItems, wishlistTableId, wishlistId ){
       await delay();
       wishlistItem = {}
                     let wishlist =  JSON.stringify(getWishListData);
-              //     console.log(wishlist)
+                 console.log(wishlist)
              
                     let re = /(offscreen\\\"\>\$\d+\.\d+)/g;
                     let re2 = /(date-added\"\:\"\w+\s\d+\,\s\d+)/g;
