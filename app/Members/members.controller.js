@@ -235,8 +235,8 @@ exports.forgotPassword = async(req,res)=>{
         const hostUrl = "boring-snyder-80af72.netlify.app/#" 
            const to = req.body.username;
            const emailTo = req.body.email.toLowerCase();
-           const link = `${hostUrl}/forgotpasswordverification?email=${emailTo}&username=${to}&code=${code}`;
-           const link2 = `${hostUrl2}/forgotpasswordverification?email=${emailTo}&username=${to}&code=${code}`;
+           const link = `${hostUrl}/setnewpassword?email=${emailTo}&username=${to}&code=${code}`;
+           const link2 = `${hostUrl2}/setnewpassword?email=${emailTo}&username=${to}&code=${code}`;
            sentemail =  await  processEmail(emailFrom, emailTo, subject, link, link2);
              console.log(sentemail)
        if(sentemail === true){
