@@ -54,14 +54,6 @@ console.log(req.body)
         }else{
             
             try{ 
-              
-                const isWishListExist = await Members.findByWishlistId(wishlistId , wishlistUrl)
-                if (isWishListExist.length>0){
-                    res.status(400).send({message:"wishlist already exist"})
-                }
-                   else{
-               
-
                 let re4 = /\w{13}/g;       
                 let found4 = wishlistUrl.match(re4);
                 if(found4 === null){
@@ -72,6 +64,14 @@ console.log(req.body)
                     wid = found4[0]
                 }
                // console.log(found4[0]); 
+                const isWishListExist = await Members.findByWishlistId(wid, wishlistUrl)
+                if (isWishListExist.length>0){
+                    res.status(400).send({message:"wishlist already exist"})
+                }
+                   else{
+               
+
+                
               
              
             //  https://www.amazon.com/hz/wishlist/ls/V30TKCJELQ06?ref_=wl_share 
