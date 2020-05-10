@@ -184,13 +184,17 @@ exports.signIn = async(req,res)=>{
                          
                           const noOfOffer = await Items.findNumberOfOffer(userDetails[0].id)
                           if ( userDetails[0].noOfTransactions > 5 || noOfOffer <= 10  ){
-                            user.makeoffer=true
+                            user.makeOfferAsShopper=true
+                          }else{
+                            user.makeOfferAsShoper=false
                           }
-                          if ( userDetails[0].noOfTransactions >= getPriviledges[0].transactionLimit  ){
-                            user.transactionLimit=true
+                          if ( userDetails[0].noOfTransactions <= getPriviledges[0].transactionLimit  ){
+                            user.makeTransactionAsEarners=true
+                          }else{
+                            user.makeTransactionAsEarners=false 
                           }
 
-                        user.priviledges=getPriviledges[0]
+                        user.priviledgesAsEarners=getPriviledges[0]
                         user.token = tokens
                         res.status(200).send(user)
                     }else{

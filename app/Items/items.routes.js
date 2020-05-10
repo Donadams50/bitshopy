@@ -21,7 +21,6 @@ module.exports = app =>{
     // app.get("/members/:memberId", verifyToken, member.findOne)
 
     // // get all members
-    // app.get("/members", verifyToken, member.findAll)
 
     //  // check username availablity
     //  app.get("/members/name/availability/:username", member.findUsername)

@@ -59,7 +59,14 @@ console.log(req.body)
 
                 let re4 = /\w{13}/g;       
                 let found4 = wishlistUrl.match(re4);
-                console.log(found4[0]); 
+                if(found4 === null){
+                    let re5= /\w{12}/g;       
+                let found5 = wishlistUrl.match(re5);
+                wid = found5[0]
+                }else{
+                    wid = found4[0]
+                }
+               // console.log(found4[0]); 
               
              
             //  https://www.amazon.com/hz/wishlist/ls/3CFEKJ4MI59IW?ref_=wl_share 
@@ -67,21 +74,26 @@ console.log(req.body)
               let com = ".com"
                let format ="json"
                let status = "unpurchased"
-           get_wishlist = await axios.get('http://www.justinscarpetti.com/projects/amazon-wish-lister/api/?id='+found4[0]+'&format='+format+'&reveal='+status+'' )
+           get_wishlist = await axios.get('http://www.justinscarpetti.com/projects/amazon-wish-lister/api/?id='+wid+'&format='+format+'&reveal='+status+'' )
 
          // get_wishlist2 = await scraper.scrape(''+url+'' )
-               wishList = [];
-          
+             let  wishList = [];
+          let     finalWishlist ={}
+                 finalWishlist.wishlistValid = true
                for( var i = 0; i < get_wishlist.data.length; i++){
                     
 
                             basic= await PersistOneByOne(get_wishlist.data[i]);
-                           
+                            console.log(basic.itemValid)
+                           if(basic.itemValid === false){
+                               finalWishlist.wishlistValid = false
+                           }
                             wishList.push(basic);   
                             }
-               
 
-                                 res.status(200).send(wishList)
+                            finalWishlist.wishlistItems = wishList
+
+                                 res.status(200).send(finalWishlist)
                        
 
     
@@ -281,7 +293,7 @@ async function PersistOneByOne2(wishlistItems, wishlistTableId, wishlistId ){
       await delay();
       wishlistItem = {}
                     let wishlist =  JSON.stringify(getWishListData);
-                   console.log(wishlist)
+              //     console.log(wishlist)
              
                     let re = /(offscreen\\\"\>\$\d+\.\d+)/g;
                     let re2 = /(date-added\"\:\"\w+\s\d+\,\s\d+)/g;
@@ -298,11 +310,13 @@ async function PersistOneByOne2(wishlistItems, wishlistTableId, wishlistId ){
                 if (found === null ){ 
                     itemValid = false;
                     price2 = " "
+                    var res = ""
                  }
                     else{
                  if (found.length == 1){
                      itemValid = true;
                      price2 = ""
+                   
                  }
                  
                  else {
