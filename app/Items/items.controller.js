@@ -265,6 +265,14 @@ exports.getAllOfferQualifiedFor= async(req, res) =>{
                     message: 'group added to database'
                   });
                 console.log(allOffer.length)
+                for( var i = 0; i < allOffer.length; i++){
+                    let cors ="true"
+                  let currency = "USD"
+                getBtcPrice = await axios.get('https://blockchain.info/tobtc?currency='+currency+'&value=5'+allOffer[0].totalPay+'&cors='+cors+'' )
+                    allOffer[i].btcPrice = getBtcPrice.data
+                    console.log(getBtcPrice)
+                  }
+             //   https://blockchain.info/tobtc?currency=USD&value=500&cors=true
                 res.status(200).send(allOffer)
             }else if(allOffer.length=== 0){
            //     console.log(allGroup.length)
