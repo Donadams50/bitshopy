@@ -64,7 +64,7 @@ console.log(req.body)
                     wid = found4[0]
                 }
                // console.log(found4[0]); 
-                const isWishListExist = await Members.findByWishlistId(wid, wishlistUrl)
+                const isWishListExist = await Items.findByWishlistId(wid, wishlistUrl)
                 if (isWishListExist.length>0){
                     res.status(400).send({message:"wishlist already exist"})
                 }
@@ -150,7 +150,7 @@ console.log(req.body)
         }else{
             
             try{ 
-                const isWishListExist = await Members.findByWishlistId(wishlistId , wishlistUrl)
+                const isWishListExist = await Items.findByWishlistId(wishlistId , wishlistUrl)
                 if (isWishListExist.length>0){
                     res.status(400).send({message:"wishlist already exist"})
                 }else{
