@@ -31,7 +31,7 @@ const Items = function(){
        // check if wish list exist
        Items.findByWishlistId= async function(wishlistId , wishlistUrl){
         try{
-            let status = pending;
+            
             const result = await sql.query('SELECT * FROM wishlist where wishlistId=? AND wishlistUrl=?', [wishlistId , wishlistUrl])
             const data= result[0]
             return data

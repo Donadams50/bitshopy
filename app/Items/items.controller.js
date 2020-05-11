@@ -60,8 +60,10 @@ console.log(req.body)
                     let re5= /\w{12}/g;       
                 let found5 = wishlistUrl.match(re5);
                 wid = found5[0]
+                console.log(wid)
                 }else{
                     wid = found4[0]
+                    console.log(wid)
                 }
                // console.log(found4[0]); 
                 const isWishListExist = await Items.findByWishlistId(wid, wishlistUrl)
@@ -80,7 +82,7 @@ console.log(req.body)
                let format ="json"
                let status = "unpurchased"
            get_wishlist = await axios.get('http://www.justinscarpetti.com/projects/amazon-wish-lister/api/?id='+wid+'&format='+format+'&reveal='+status+'' )
-
+   console.log(get_wishlist.data)
          // get_wishlist2 = await scraper.scrape(''+url+'' )
              let totalItemAmount = 0;
              let  wishList = [];
@@ -353,6 +355,7 @@ async function PersistOneByOne2(wishlistItems, wishlistTableId, wishlistId ){
 
   try{
       await delay();
+      console.log(getWishListData)
       wishlistItem = {}
                     let wishlist =  JSON.stringify(getWishListData);
                  console.log(wishlist)
@@ -365,7 +368,7 @@ async function PersistOneByOne2(wishlistItems, wishlistTableId, wishlistId ){
                 //    let re2 = /Transaction (Reference: \*\w+\d+\/\s\d+)/i;        
                    let found = wishlist.match(re);
                    let found1 = wishlist.match(re2);
-             //   console.log(found1);
+               console.log(found1);
               //   console.log(found);
 
                 console.log(found);
