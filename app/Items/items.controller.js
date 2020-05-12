@@ -275,9 +275,6 @@ exports.getAllOfferQualifiedFor= async(req, res) =>{
                     console.log(getBtcPrice)
                   }
                 res.status(200).send(allOffer)
-            }else if(allOffer.length=== 0){
-           //     console.log(allGroup.length)
-                res.status(204).send("No offer created yet")
             }
             else{
                 
