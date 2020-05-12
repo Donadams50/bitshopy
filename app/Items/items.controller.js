@@ -270,11 +270,10 @@ exports.getAllOfferQualifiedFor= async(req, res) =>{
                 for( var i = 0; i < allOffer.length; i++){
                     let cors ="true"
                   let currency = "USD"
-                getBtcPrice = await axios.get('https://blockchain.info/tobtc?currency='+currency+'&value=5'+allOffer[i].totalPay+'&cors='+cors+'' )
+                getBtcPrice = await axios.get('https://blockchain.info/tobtc?currency='+currency+'&value='+allOffer[i].totalPay+'&cors='+cors+'' )
                     allOffer[i].btcPrice = getBtcPrice.data
                     console.log(getBtcPrice)
                   }
-             //   https://blockchain.info/tobtc?currency=USD&value=500&cors=true
                 res.status(200).send(allOffer)
             }else if(allOffer.length=== 0){
            //     console.log(allGroup.length)
