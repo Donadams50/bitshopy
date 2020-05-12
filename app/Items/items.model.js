@@ -84,11 +84,7 @@ const Items = function(){
     try{ 
         let status = "Pending";
         
-// SELECT Orders.OrderID, Customers.CustomerName
-// FROM Orders
-// INNER JOIN Customers ON Orders.CustomerID = Customers.CustomerID;
-console.log(discount)
-console.log(orderSizeLimit)
+
 const result = await sql.query('SELECT * FROM wishlist INNER JOIN profile ON wishlist.shopperId = profile.id where status=? AND discount>=? AND totalPay<=?', [status, discount, orderSizeLimit])
       //  const result = await sql.query('SELECT * FROM wishlist where status=? AND discount>=? AND totalPay<=?', [status, discount, orderSizeLimit])
        console.log(result[0])

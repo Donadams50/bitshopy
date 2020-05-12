@@ -173,22 +173,22 @@ exports.signIn = async(req,res)=>{
                 }else{
                     const retrievedPassword = user[0].password
                     const userDetails = await Members.findDetailsByEmail(req.body.email.toLowerCase())
-                    //console.log(userDetails)
                     const {id , username,  email, level}= userDetails[0]
                     const isMatch = await passwordUtils.comparePassword(password.toLowerCase(), retrievedPassword);
                     console.log(isMatch)
                     if (isMatch){
                         const tokens = signToken(id, username, email, level) 
                          const user = userDetails[0]
-                          const getPriviledges = await Members.findLevelDetails(userDetails[0].level)
+                         const getPriviledges1 = await Members.findLevelDetails(userDetails[0].level)
                          
                           const noOfOffer = await Items.findNumberOfOffer(userDetails[0].id)
+                          console.log(noOfOffer)
                           if ( userDetails[0].noOfTransactions > 5 || userDetails[0].level === 0){
                             user.makeOfferAsShopper=true
                             user.maximumDiscountAsShopper= 100
                             user.maximumOfferPrice= 999
                             user.minimumOfferPrice= 3.99
-                          }else if( noOfOffer <= 10  ){
+                          }else if( noOfOffer.length <= 10  ){
                             user.makeOfferAsShopper=true
                             user.maximumDiscountAsShopper= 10
                             user.maximumOfferPrice= 999
@@ -197,15 +197,28 @@ exports.signIn = async(req,res)=>{
                           else{
                             user.makeOfferAsShoper=false
                           }
-                          if ( userDetails[0].noOfTransactions <= getPriviledges[0].transactionLimit ||userDetails[0].level  === 0 || userDetails[0].level=== 5 ){
+                          if ( userDetails[0].noOfTransactions < getPriviledges1[0].transactionLimit ||userDetails[0].level  === 0 || userDetails[0].level=== 5 ){
                             user.makeTransactionAsEarners=true
-                          }else{
-                            user.makeTransactionAsEarners=false 
+                            user.priviledgesAsEarners=getPriviledges1[0]
+                            user.token = tokens
+                            res.status(200).send(user)
+
+                          }else if( userDetails[0].noOfTransactions >= getPriviledges1[0].transactionLimit ){
+                              console.log(userDetails[0].level)
+                              const newLevel = parseInt(userDetails[0].level) + 1
+                            const updatelevel = await Members.updateLevel(userDetails[0].id, newLevel)
+                            const userDetails2 = await Members.findDetailsByEmail(req.body.email.toLowerCase())
+                           const   {id , username,  email, level}= userDetails2[0]
+                            const getPriviledges = await Members.findLevelDetails(userDetails2[0].level)
+                             tokens1 = signToken(id, username, email, level) 
+                             user = userDetails2[0]
+                            user.priviledgesAsEarners=getPriviledges[0]
+                            user.token = tokens1;
+                            user.makeTransactionAsEarners=true;
+                            res.status(200).send(user)
                           }
 
-                        user.priviledgesAsEarners=getPriviledges[0]
-                        user.token = tokens
-                        res.status(200).send(user)
+                       
                     }else{
                         res.status(400).json({message:"Incorrect Login Details"})
                     }
