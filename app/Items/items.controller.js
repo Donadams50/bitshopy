@@ -193,13 +193,13 @@ console.log(req.body)
 
 // get all offer
    
-// GET all group
+
 exports.getAllOffer = async(req, res) =>{
   
     try{
         
       
-            const allOffer = await Items.getAllOffer()
+            const allOffer = await Items.getAllOffer(req.user.id)
             if (allOffer.length > 0){
                 logger.log({
                     level: 'info',
@@ -259,7 +259,7 @@ exports.getAllOfferQualifiedFor= async(req, res) =>{
             discount = 0;
             orderSizeLimit = 10000000
         }
-            const allOffer = await Items.getAllOfferQualifiedFor(discount, orderSizeLimit)
+            const allOffer = await Items.getAllOfferQualifiedFor(discount, orderSizeLimit,req.user.id )
             console.log(allOffer)
             if (allOffer.length > 0){
                 logger.log({
@@ -272,10 +272,13 @@ exports.getAllOfferQualifiedFor= async(req, res) =>{
                   let currency = "USD"
                 getBtcPrice = await axios.get('https://blockchain.info/tobtc?currency='+currency+'&value='+allOffer[i].totalPay+'&cors='+cors+'' )
                     allOffer[i].btcPrice = getBtcPrice.data
-                    console.log(getBtcPrice)
+                    console.log(getBtcPrice.data)
                   }
                 res.status(200).send(allOffer)
-            }
+            }else if(allOffer.length=== 0){
+                //     console.log(allGroup.length)
+                     res.status(204).send( allOffer)
+                 }
             else{
                 
                 res.status(400).send({message:"error while getting offer"}) 
@@ -297,11 +300,19 @@ exports.getAllOfferQualifiedFor= async(req, res) =>{
 exports.getAllItemsInOffer= async(req, res) =>{
   
     try{
-            const allOffrItem = await Items.getAllItemsInOffer(req.param.offerId)
-            if (allOffer.length > 0){
+        console.log(req.params.offerId)
+            const allOfferItem = await Items.getAllItemsInOffer(req.params.offerId)
+         //   console.log(allOfferItem)
+         //   console.log(allOfferItem.offerItems.length)
+            if (allOfferItem.offerItems.length > 0){
+                let cors ="true"
+                let currency = "USD"
+              getBtcPrice = await axios.get('https://blockchain.info/tobtc?currency='+currency+'&value='+allOfferItem.offer[0].totalPay+'&cors='+cors+'' )
+              allOfferItem.offer[0].btcPrice = getBtcPrice.data
+                  console.log(getBtcPrice.data)
               
-                res.status(200).send(allOffrItem)
-            }else if(allOffrItem.length=== 0){
+                res.status(200).send(allOfferItem)
+            }else if(allOfferItem.offerItems.length=== 0){
            //     console.log(allGroup.length)
                 res.status(204).send("No item in this wishlist")
             }
@@ -415,48 +426,134 @@ async function PersistOneByOne2(wishlistItems, wishlistTableId, wishlistId ){
   }
 
 }  
-
 // accept offer
-// create member
-exports.accepteOffer = async(req,res)=>{
+exports.acceptOfferTemp = async(req,res)=>{
     if (!req.body){
         res.status(400).send({message:"Content cannot be empty"});
     }
 console.log(req.body)
 
-   console.log( req.user )
+  // console.log( req.user )
     //console.log(decoded)
-    const { amazonOrderId, shopperId, earnerId, wishlistTableId  } = req.body;
-   // var userId = decoded.id;
-    if (amazonOrderId &&shopperId && earnerId && wishlistTableId ){
-        if ( amazonOrderId==="" ||shopperId  ==="" || earnerId==="" || wishlistTableId ===""){
+
+    
+
+    
+    
+       
+            
+            try{ 
+                const isUserHasPendingOffer = await Items.UserHasPendingOffer(req.user.id)
+                console.log(isUserHasPendingOffer)
+                if (isUserHasPendingOffer.length>0){
+                    res.status(409).send({message:"User alaready has a pending accepted offer, complete the current offer and try again"})
+                }
+            else{
+        
+            console.log(req.user.id)
+             let   status = "Accepted";
+             console.log(req.user.id)
+             console.log(req.params.offerId)
+             
+            
+          
+             const createorder = await Items.acceptOfferTemp( req.params.offerId, status, req.user.id)
+          //   console.log(createorder.affectedRows)
+             if (createorder.affectedRows === 1){
+                res.status(200).send( {message:"Temporary Offer Accepted succesfully"})
+                               
+             }else{
+                res.status(400).send({
+                    message:" Temporary Accept Offer not succesfully"
+                });
+             }            
+            }      
+            }catch(err){
+                console.log(err)
+                res.status(500).send({message:"Error while accepting offer temporarily "})
+            }
+       
+   
+
+
+}
+// cancel temp offer
+exports.cancelOfferTemp = async(req,res)=>{
+   
+            
+            try{ 
+               const isUserHasPendingOffer = await Items.UserHasPendingOffer(req.user.id)
+               console.log(isUserHasPendingOffer.length)
+                if (isUserHasPendingOffer.length<0){
+                    res.status(400).send({message:"user does not have any offer to cancel"})
+                }
+           else{
+        
+            
+             let   status = "Pending"
+             let   earnerId = " "
+            
+          
+             const createorder = await Items.acceptOfferTemp( req.params.offerId, status, earnerId)
+             if (createorder.affectedRows === 1){
+                res.status(200).send( {message:"Temporary Offer cancelled succesfully"})
+                               
+             }else{
+                res.status(400).send({
+                    message:" Temporary cancellation of  Offer not succesfully"
+                });
+             }            
+           }
+              
+            }catch(err){
+                console.log(err)
+                res.status(500).send({message:"Error while accepting offer temporarily "})
+            }
+        }
+    
+    
+
+
+
+// accept offer
+exports.acceptOffer = async(req,res)=>{
+    if (!req.body){
+        res.status(400).send({message:"Content cannot be empty"});
+    }
+        console.log(req.body)
+
+    const { amazonOrderId, shopperId, earnerId, wishlistTableId, deliveryDate, wishlistId, orderLink} = req.body;
+
+    
+    if (amazonOrderId &&shopperId && earnerId && wishlistTableId && deliveryDate && wishlistId && orderLink ){
+        if ( amazonOrderId==="" ||shopperId  ==="" || earnerId==="" || wishlistTableId ==="" || deliveryDate===""|| wishlistId==="" || orderLink ===""){
             res.status(400).send({
                 message:"Incorrect entry format"
             });
         }else{
             
             try{ 
- 
+                const isUserHasPendingOffer = await Items.UserHasPendingOffer(req.user.id)
+                console.log(isUserHasPendingOffer.length)
+                if (isUserHasPendingOffer.length<0){
+                    res.status(400).send({message:"User does not have any offer to confirm"})
+                }
+           else{
         
              let   bitshopyOrderId = uuid.v4();
-             let   status = "Processing Order"
-            
-          
-             const createorder = await Items.createOrder(amazonOrderId, shopperId, earnerId, wishlistTableId,  bitshopyOrderId,  status)
+             let   status = "Waiting for confimation"
+             let   orderDate = new Date();
+             const createorder = await Items.acceptOffer(amazonOrderId, shopperId, earnerId, wishlistTableId,  bitshopyOrderId,  status, deliveryDate,wishlistId, orderLink, orderDate)
+                  
              if (createorder.insertId > 0){
-               console.log("yes inserted")
-             }else{
-              console.log("not inserted")
-             }
-            
-                                    res.status(200).send(finalWishlist)
+                res.status(201).send( {message:"Offer Accepted succesfully"})
                                
-                                 
-                       
-
-    
-                    
-                
+             }else{
+                res.status(400).send({
+                    message:" Accept Offer not succesfully"
+                });
+             }            
+           }      
             }catch(err){
                 console.log(err)
                 res.status(500).send({message:"Error while accepting offer "})
@@ -467,4 +564,52 @@ console.log(req.body)
             message:"Incorrect entry format"
         });
     }
+
+
+}
+
+// GET all order
+exports.getOrder = async(req, res) =>{
+  
+    try{
+        
+      
+            const allOrder = await Items.getOrder(req.user.id)
+            if (allOrder.length > 0){
+                res.status(200).send(allOrder)
+            }else if(allOrder.length=== 0){
+
+                res.status(204).send("No Order created yet")
+            }
+            else{
+               
+                res.status(400).send({message:"error while getting Order"}) 
+            }  
+        }
+       
+    catch(err){
+     console.log(err)
+        res.status(500).send({message:"issues while retrieving offers"})
+        
+    }
+  
+    
+}
+
+// GET all order
+exports.getBtcRate = async(req, res) =>{
+  
+    try{   
+      getBtcRate = await axios.get('https://api.coindesk.com/v1/bpi/currentprice/USD.json' )
+      
+        res.status(200).send(getBtcRate.data.bpi.USD)
+        }
+       
+    catch(err){
+     console.log(err)
+        res.status(500).send({message:"issues while retrieving offers"})
+        
+    }
+  
+    
 }
