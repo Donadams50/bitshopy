@@ -136,6 +136,22 @@ Members.findByEmail= async function(email){
     }
 }
 
+  // find credential by id
+  Members.findDetailsById= async function(userId){
+    try{
+        const result = await sql.query('SELECT * from profile where id= ?', [userId])
+     //   console.log(result[0])
+            const data=result[0]
+            console.log('-------------------------------------------------------CHECKING IF USERNAME EXISTS auth table---------------')
+            return data
+        
+    }catch(err){
+        console.log(err)
+        console.log('--------------------------------------------err--------------------------------------------------------')
+        return (err)
+    }
+}
+
 
 // Get full members details by email
 Members.findDetailsByEmail= async function(email){
@@ -169,6 +185,20 @@ Members.updatePassword= async function(email, password){
 Members.updateLevel= async function(id, newLevel){
     try{
         const result = await sql.query('update profile set level=? where id=?',[newLevel, id])
+        const data=result[0]
+        console.log('-------------------------------------------------------CHECKING IF USERNAME EXISTS---------------')
+        return data
+    }catch(err){
+        console.log(err)
+        console.log('--------------------------------------------err--------------------------------------------------------')
+        return (err)
+    }
+}
+
+//update wallet
+Members.updateWallet= async function(finalBalanceBtc, finalBalanceUsd, noOfTransactions, shopperId){
+    try{
+        const result = await sql.query('update profile SET walletBalanceBtc=?, walletBalanceUsd=?, noOfTransactions=? where id =?',[finalBalanceBtc, finalBalanceUsd, noOfTransactions, shopperId])
         const data=result[0]
         console.log('-------------------------------------------------------CHECKING IF USERNAME EXISTS---------------')
         return data

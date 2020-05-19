@@ -1,5 +1,6 @@
 const Items = require('../Items/items.model.js');
 const Members = require('../Members/members.model.js');
+const Payments = require('../Payments/payments.model.js');
 const AmazonListScraper = require('amazon-list-scraper').default;
 // const scraper = new AmazonListScraper();
 
@@ -54,17 +55,21 @@ console.log(req.body)
         }else{
             
             try{ 
-                let re4 = /\w{13}/g;       
-                let found4 = wishlistUrl.match(re4);
-                if(found4 === null){
-                    let re5= /\w{12}/g;       
-                let found5 = wishlistUrl.match(re5);
-                wid = found5[0]
-                console.log(wid)
-                }else{
-                    wid = found4[0]
-                    console.log(wid)
-                }
+                const upperCaseWords = wishlistUrl.match(/(\b[A-Z0-9][A-Z0-9]+|\b[A-Z]\b)/g);
+                        console.log(upperCaseWords[0])
+                        wid = upperCaseWords[0]
+                
+                // let re4 = /\w{13}/g;       
+                // let found4 = wishlistUrl.match(re4);
+                // if(found4 === null){
+                //     let re5= /\w{12}/g;       
+                // let found5 = wishlistUrl.match(re5);
+                // wid = found5[0]
+                // console.log(wid)
+                // }else{
+                //     wid = found4[0]
+                //     console.log(wid)
+                // }
                // console.log(found4[0]); 
                 const isWishListExist = await Items.findByWishlistId(wid, wishlistUrl)
                 if (isWishListExist.length>0){
@@ -135,15 +140,18 @@ console.log(req.body)
            
     const {  wishlistItems, noOfItems, shopperId, discount, originalTotalPrice, totalPay, bitshopyFee, savedFee, taxPaid, onlyPrime , shippingFee, taxFee, wishlistUrl} = req.body;
    
-    let re4 = /\w{13}/g;       
-    let found4 = wishlistUrl.match(re4);
-    if(found4 === null){
-        let re5= /\w{12}/g;       
-    let found5 = wishlistUrl.match(re5);
-    wishlistId = found5[0]
-    }else{
-        wishlistId = found4[0]
-    }
+    // let re4 = /\w{13}/g;       
+    // let found4 = wishlistUrl.match(re4);
+    // if(found4 === null){
+    //     let re5= /\w{12}/g;       
+    // let found5 = wishlistUrl.match(re5);
+    // wishlistId = found5[0]
+    // }else{
+    //     wishlistId = found4[0]
+    // }
+    const upperCaseWords = wishlistUrl.match(/(\b[A-Z0-9][A-Z0-9]+|\b[A-Z]\b)/g);
+                        console.log(upperCaseWords[0])
+                        wishlistId = upperCaseWords[0]
     if (wishlistItems && wishlistId && noOfItems && shopperId && discount && originalTotalPrice && totalPay && bitshopyFee && savedFee && wishlistUrl){
         if ( wishlistItems ==="" || wishlistId ==="" || noOfItems==="" || shopperId==="" || discount==="" || originalTotalPrice==="" || totalPay==="" || bitshopyFee==="" || savedFee===""||wishlistUrl==="" ){
             res.status(400).send({
@@ -152,6 +160,10 @@ console.log(req.body)
         }else{
             
             try{ 
+                const userDetails2 = await Members.findDetailsById(shopperId)
+                if (userDetails2[0].walletBalanceUsd < totalPay){
+                    res.status(400).send({message:"Insufficient Fund"})
+                }else{
                 const isWishListExist = await Items.findByWishlistId(wishlistId , wishlistUrl)
                 if (isWishListExist.length>0){
                     res.status(400).send({message:"wishlist already exist"})
@@ -162,10 +174,40 @@ console.log(req.body)
             if (createoffer.insertId >=1){
                 console.log("ee");
                 console.log(createoffer.insertId)
+
                 for( var i = 0; i < wishlistItems.length; i++){
                     basic= await PersistOneByOne2(wishlistItems[i], createoffer.insertId , wishlistId);
                 
                   }
+                  const userDetails2 = await Members.findDetailsById(shopperId)
+                  if (userDetails2.length>0){
+                      console.log(userDetails2[0].walletBalanceBtc)
+                      console.log(userDetails2[0].walletBalanceBtc)
+                      console.log(userDetails2[0].noOfTransactions)
+                      let type = "Spent"
+                      let status = "Success"
+                      let transactionDate = new Date();
+                      let cors ="true"
+                      let currency = "USD"
+                      const initailBalanceBtc = userDetails2[0].walletBalanceBtc
+                      const initailBalanceUsd = userDetails2[0].walletBalanceUsd
+                      const noOfTransactions = parseInt(userDetails2[0].noOfTransactions) + 1
+                      const getBtcPrice = await axios.get('https://blockchain.info/tobtc?currency='+currency+'&value='+totalPay+'&cors='+cors+'' )
+                        amountBtc = getBtcPrice.data
+                        console.log(getBtcPrice.data)
+                        let finalBalanceBtc = parseFloat(initailBalanceBtc) - parseFloat(amountBtc)
+                        getUsdInBitcoin = await axios.get('https://blockchain.info/ticker')  
+                        console.log(getUsdInBitcoin.data.USD.last)
+                          let finalBalanceUsd = parseFloat(getUsdInBitcoin.data.USD.last) * parseFloat(finalBalanceBtc) 
+                    
+
+
+                    const createtransaction =await Payments.createTransactionSpend(totalPay, type, status, transactionDate, shopperId , createoffer.insertId, amountBtc, initailBalanceBtc, finalBalanceBtc)
+                    const updatewallet = await Members.updateWallet(finalBalanceBtc, finalBalanceUsd, noOfTransactions, shopperId) 
+                }else{
+                    console.log("user not found")
+                }
+                  
                   res.status(201).send({
                                 message:"offer created"
                             })
@@ -176,6 +218,7 @@ console.log(req.body)
                         
    
             }
+        }
 
                     
                 
@@ -362,23 +405,19 @@ async function PersistOneByOne2(wishlistItems, wishlistTableId, wishlistId ){
 
   try{
       await delay();
-      console.log(getWishListData)
+      //console.log(getWishListData)
       wishlistItem = {}
                     let wishlist =  JSON.stringify(getWishListData);
                  console.log(wishlist)
              
                     let re = /(offscreen\\\"\>\$\d+\.\d+)/g;
-                    let re2 = /(date-added\"\:\"\w+\s\d+\,\s\d+)/g;
-                  //let re4 =  /(offscreen \d+(\,\d+)*(\.\d+))/i;
+                   // let re2 = /(date-added\"\:\"\w+\s\d+\,\s\d+)/g;
 
-                  // let re3 = /alert (on xxxxxx\d+)/i;
-                //    let re2 = /Transaction (Reference: \*\w+\d+\/\s\d+)/i;        
                    let found = wishlist.match(re);
-                   let found1 = wishlist.match(re2);
-               console.log(found1);
-              //   console.log(found);
+                 //  let found1 = wishlist.match(re2);
+                  //console.log(found1);
+                  console.log(found);
 
-                console.log(found);
                 if (found === null ){ 
                     itemValid = false;
                     price2 = " "
@@ -398,8 +437,8 @@ async function PersistOneByOne2(wishlistItems, wishlistTableId, wishlistId ){
                 var res = found[0].substring(13)
             
             }
-            var res1 = found1[0].substring(13);
-            var  res2   = res1.replace(/,/g, '')
+          //  var res1 = found1[0].substring(13);
+         //   var  res2   = res1.replace(/,/g, '')
                   
                  //onsole.log(getWishListData)
                 wishlistItem.itemName = getWishListData.name;
@@ -410,7 +449,7 @@ async function PersistOneByOne2(wishlistItems, wishlistTableId, wishlistId ){
                 wishlistItem.comment = getWishListData.comment;
                 wishlistItem.itemValid = itemValid;
                 wishlistItem.price  = res;
-                wishlistItem.dateAdded = res2;
+              //  wishlistItem.dateAdded = res2;
                 wishlistItem.price2= price2
 
 
@@ -572,11 +611,26 @@ exports.acceptOffer = async(req,res)=>{
 exports.getOrder = async(req, res) =>{
   
     try{
-        
+        let { type} = req.query;
+        console.log(req.query)
+        if (!type){
+            res.status(400).send({message:"a type of active or previous must be sent"}) 
+        }else{
       
-            const allOrder = await Items.getOrder(req.user.id)
+            const allOrder = await Items.getOrder(req.user.id, type )
             if (allOrder.length > 0){
+              //  console.log(allOrder[0])
+                for( var i = 0; i < allOrder.length; i++){
+                    const imgurl = await Items.getImageUrl(allOrder[i].id )
+                    console.log(imgurl[0])
+                    allOrder[i].imgUrl  = imgurl
+                   let savedFeePercent = (parseFloat(allOrder[i].savedFee) /parseFloat(allOrder[i].originalTotalPrice) * 100)
+                   allOrder[i].savedFeePercent = savedFeePercent
+                    
+                  }
+                  console.log(allOrder)
                 res.status(200).send(allOrder)
+               
             }else if(allOrder.length=== 0){
 
                 res.status(204).send("No Order created yet")
@@ -586,6 +640,7 @@ exports.getOrder = async(req, res) =>{
                 res.status(400).send({message:"error while getting Order"}) 
             }  
         }
+    }
        
     catch(err){
      console.log(err)

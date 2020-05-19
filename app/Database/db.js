@@ -5,7 +5,7 @@ const dotenv=require('dotenv');
 dotenv.config();
 // Create Connection to the database
  const db = mysql.createPool(
-   // {
+//    {
   
   
 //     host:process.env.HOST,

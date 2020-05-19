@@ -22,6 +22,7 @@ const axios = require('axios')
 
  require("./app/Members/members.routes.js")(app)
  require("./app/Items/items.routes.js")(app)
+ require("./app/Payments/payments.routes.js")(app)
 // require("./app/Consultants/consultant.routes.js")(app)
 // require("./app/Subscription/subscription.routes.js")(app)
 // require("./app/Consultants/consultant.routes")(app)
