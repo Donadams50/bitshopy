@@ -207,13 +207,13 @@ const result = await sql.query('SELECT w.* , p.username, p.level FROM wishlist w
 
       if (type === "Active"){
         let status = "Completed"
-        const result = await sql.query('SELECT w.*, p.username, p.level FROM wishlist w, profile p where (w.shopperId = p.id AND w.shopperId=?) OR ( w.earnerId = p.id AND w.earnerId=?) AND status!=? ', [userId, userId,  status])
+        const result = await sql.query('SELECT w.*, p.username, p.level FROM wishlist w, profile p where ((w.shopperId = p.id AND w.shopperId=?) OR ( w.earnerId = p.id AND w.earnerId=?)) AND w.status!=? ', [userId, userId,  status])
        // 'SELECT w.* , p.username, p.level FROM wishlist w, profile p where w.shopperId = p.id AND w.status=? AND w.discount>=? AND w.totalPay<=? 
         const data= result[0]
         return data
       }else if (type === "Previous"){
         let status = "Completed"
-        const result = await sql.query('SELECT w.*, p.username, p.level FROM wishlist w, profile p where (w.shopperId = p.id AND w.shopperId=?) OR ( w.earnerId = p.id AND w.earnerId=?) AND status=? ', [userId, userId, status])
+        const result = await sql.query('SELECT w.*, p.username, p.level FROM wishlist w, profile p where ((w.shopperId = p.id AND w.shopperId=?) OR ( w.earnerId = p.id AND w.earnerId=?)) AND w.status=? ', [userId, userId, status])
       
         const data= result[0]
         return data
