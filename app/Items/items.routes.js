@@ -3,15 +3,13 @@ module.exports = app =>{
   //  const authentication = require('../Helpers/authentication')
     const jwtTokenUtils = require('../Helpers/jwtTokenUtils')
     const { verifyToken } = jwtTokenUtils;
-    // Create a new item
+    // get wish list details
     app.post("/getwishlistdetails", verifyToken, item.create); 
-
+   // post wish list
     app.post("/offer", verifyToken, item.createOffer); 
   
-    // get all members
-    
+    // get all offer  
     app.get("/alloffer", verifyToken, item.getAllOffer)
-
 
     // offer qualified for
     app.get("/useroffer", verifyToken, item.getAllOfferQualifiedFor)
@@ -26,6 +24,15 @@ module.exports = app =>{
     app.get("/canceltemporaryoffer/:offerId", verifyToken, item.cancelOfferTemp);
 
     app.get("/allorder", verifyToken, item.getOrder)
+
+    // shopper cancel offer before earner accept
+    app.get("/shoppercanceloffer/:offerId", verifyToken, item.shopperCancelOffer);
+
+    app.get("/confirmdelivery/:offerId", verifyToken, item.shopperConfirmDelivery);
+
+    // earner cancel offer after it has been accepted
+    app.get("/earnercanceloffer/:offerId", verifyToken, item.earnerCancelOffer);
+
 
     app.get("/btcrate",  item.getBtcRate)
     

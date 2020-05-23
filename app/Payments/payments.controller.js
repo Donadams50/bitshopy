@@ -5,7 +5,7 @@ const axios = require('axios');
 const dotenv = require('dotenv');
 dotenv.config();
 const  BlockIo = require('block_io');
-const version = 2; // API version
+const version = 2;
  const block_io = new BlockIo(process.env.api_key, process.env.secret_pin, version);
 
  const uuid = require('uuid')
@@ -34,6 +34,35 @@ exports.getAddress = async(req, res) =>{
     catch(err){
      console.log(err)
         res.status(500).send({message:"issues while getting address"})
+        
+    }
+  
+    
+}
+// get transaction history
+exports.getTransactionHistory = async(req, res) =>{
+  
+    try{  
+         
+        const alltransaction = await Payments.getTransactionHistory(req.user.id )
+        if (alltransaction.length > 0){
+    
+            res.status(200).send(alltransaction)
+        }else if(alltransaction.length=== 0){
+           
+                 res.status(204).send(alltransaction)
+             }
+        else{
+            
+            res.status(400).send({message:"error while getting transactions"}) 
+        }
+  
+    
+     }
+       
+    catch(err){
+     console.log(err)
+        res.status(500).send({message:"issues while getting transaction history"})
         
     }
   
@@ -106,8 +135,8 @@ console.log(req.body)
                 if (userDetails2[0].walletBalanceBtc <= amountBtc){
                     res.status(400).send({message:"Insufficient fund "})
                 }else{
-                    withdraw = await axios.get( 'https://block.io/api/v2/withdraw/?api_key='+process.env.api_key+'&amounts='+amountBtc+'&to_addresses='+amountBtc+'' ) 
-                    console.log(getAddress.data)
+                    withdraw = await axios.post( 'https://block.io/api/v2/withdraw/?api_key='+process.env.api_key+'&amounts='+amountBtc+'&to_addresses='+receiverAddress+'' ) 
+                    console.log(withdraw.data)
                    if(withdraw.data.status === "success"){
                     const initailBalanceBtc = userDetails2[0].walletBalanceBtc
                     const initailBalanceUsd = userDetails2[0].walletBalanceUsd
@@ -116,14 +145,14 @@ console.log(req.body)
                     getUsdInBitcoin = await axios.get('https://blockchain.info/ticker')  
                     console.log(getUsdInBitcoin.data.USD)
                     let amountUsd = parseFloat(getUsdInBitcoin.data.USD.last) * parseFloat(amountBtc) 
-                      let finalBalanceUsd = parseFloat(getUsdInBitcoin.USD.last) * parseFloat(finalBalanceBtc) 
+                      let finalBalanceUsd = parseFloat(getUsdInBitcoin.data.USD.last) * parseFloat(finalBalanceBtc) 
                      let type = "Withdrawer"               
-                     let status = "Succesful";
+                     let status = "Succes";
                      let transactionDate = new Date();
                    
 
                      const createtransaction =await Payments.createTransactionWithdrawer(amountBtc, amountUsd, type, status,transactionDate, receiverAddress, req.user.id, initailBalanceBtc, finalBalanceBtc)
-                     const updatewallet = await Members.updateWallet(finalBalanceBtc, finalBalanceUsd, noOfTransactions,req.user.id) 
+                     const updatewallet = await Members.updateWallet(finalBalanceBtc, finalBalanceUsd, noOfTransactions, req.user.id) 
                      res.status(200).send({message:"Withdrawer succesfull, you will get an alert shortly "})
                     }
                     else if (withdraw.data.status === "fail"){
@@ -142,4 +171,3 @@ console.log(req.body)
         });
     }
 }
-// /api/v2/withdraw/?api_key=API KEY&amounts=AMOUNT1,AMOUNT2,...&to_addresses=ADDRESS1,ADDRESS2,...

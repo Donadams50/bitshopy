@@ -3,7 +3,9 @@ const Members = require('../Members/members.model.js');
 const Payments = require('../Payments/payments.model.js');
 const AmazonListScraper = require('amazon-list-scraper').default;
 // const scraper = new AmazonListScraper();
-
+const btcconversion = require('../Helpers/btcconversion')
+const { getConversionInBtc } = btcconversion;
+const { getConversionInUsd } = btcconversion;
 const axios = require('axios');
 const jsdom = require("jsdom");
 const { JSDOM } = jsdom;
@@ -56,7 +58,7 @@ console.log(req.body)
             
             try{ 
                 const upperCaseWords = wishlistUrl.match(/(\b[A-Z0-9][A-Z0-9]+|\b[A-Z]\b)/g);
-                        console.log(upperCaseWords[0])
+                   //     console.log(upperCaseWords[0])
                         wid = upperCaseWords[0]
                 
                 // let re4 = /\w{13}/g;       
@@ -87,7 +89,10 @@ console.log(req.body)
                let format ="json"
                let status = "unpurchased"
            get_wishlist = await axios.get('http://www.justinscarpetti.com/projects/amazon-wish-lister/api/?id='+wid+'&format='+format+'&reveal='+status+'' )
-   console.log(get_wishlist.data)
+             console.log(get_wishlist.data)
+             if (get_wishlist.data === null){
+                res.status(400).send({message:"Invalid wishlist url"})
+             }else{
          // get_wishlist2 = await scraper.scrape(''+url+'' )
              let totalItemAmount = 0;
              let  wishList = [];
@@ -115,12 +120,12 @@ console.log(req.body)
                                  
                        
                             }
-    
+                        }
                     
                 
             }catch(err){
                 console.log(err)
-                res.status(500).send({message:"Error while creating member "})
+                res.status(500).send({message:"Server error "})
             }
         }
     }else{
@@ -163,7 +168,10 @@ console.log(req.body)
                 const userDetails2 = await Members.findDetailsById(shopperId)
                 if (userDetails2[0].walletBalanceUsd < totalPay){
                     res.status(400).send({message:"Insufficient Fund"})
-                }else{
+                } else if(totalPay > 999 || totalPay< 3.99){
+                    res.status(400).send({message:"Listing amount too low or too high"})
+                }
+                else{
                 const isWishListExist = await Items.findByWishlistId(wishlistId , wishlistUrl)
                 if (isWishListExist.length>0){
                     res.status(400).send({message:"wishlist already exist"})
@@ -499,6 +507,7 @@ console.log(req.body)
              const createorder = await Items.acceptOfferTemp( req.params.offerId, status, req.user.id)
           //   console.log(createorder.affectedRows)
              if (createorder.affectedRows === 1){
+                const createorder = await Items.sendMessage( req.params.offerId, test, req.user.id)
                 res.status(200).send( {message:"Temporary Offer Accepted succesfully"})
                                
              }else{
@@ -580,7 +589,7 @@ exports.acceptOffer = async(req,res)=>{
            else{
         
              let   bitshopyOrderId = uuid.v4();
-             let   status = "Waiting for confimation"
+             let   status = "Waiting for confirmation"
              let   orderDate = new Date();
              const createorder = await Items.acceptOffer(amazonOrderId, shopperId, earnerId, wishlistTableId,  bitshopyOrderId,  status, deliveryDate,wishlistId, orderLink, orderDate)
                   
@@ -650,6 +659,164 @@ exports.getOrder = async(req, res) =>{
   
     
 }
+
+
+
+// shopper cancel transaction
+exports.shopperCancelOffer = async(req,res)=>{
+   
+            
+    try{ 
+       const isUserHasPendingOffer = await Items.shopperHasPendingOffer(req.user.id)
+       console.log(isUserHasPendingOffer.length)
+        if (isUserHasPendingOffer.length<0){
+            res.status(400).send({message:"user does not have any offer to cancel"})
+        }
+   else{
+
+    
+
+    const userDetails2 = await Members.findDetailsById(req.user.id)
+    if (userDetails2.length>0){
+
+        const offerbyid = await Items.findPendingWishlistById(req.params.offerId)
+        const totalPay = offerbyid[0].totalPay;
+        const initailBalanceBtc = userDetails2[0].walletBalanceBtc
+        const initailBalanceUsd = await getConversionInUsd(initailBalanceBtc) 
+        const noOfTransactions = parseInt(userDetails2[0].noOfTransactions) - 1
+        console.log(initailBalanceUsd)
+        console.log(userDetails2[0].walletBalanceBtc)
+        console.log(totalPay)
+        console.log(userDetails2[0].noOfTransactions)
+        const totalPayBtc = await getConversionInBtc(totalPay)
+        console.log(totalPayBtc) 
+        
+    let finalBalanceBtc = parseFloat(initailBalanceBtc) - parseFloat(totalPayBtc)
+    const finalBalanceUsd = await getConversionInUsd(finalBalanceBtc) 
+      
+      const updatewallet = await Members.updateWallet(finalBalanceBtc, finalBalanceUsd, noOfTransactions, req.user.id) 
+      if(updatewallet.affectedRows > 0){
+      const deleteoffer =await Payments.deleteOffer(req.params.offerId)
+         if(deleteoffer){
+            res.status(200).send({message:"Succesfully cancelled transaction"}) 
+         }else{
+            res.status(400).send({message:"Not succesfull "})
+         }
+        }else{
+            res.status(400).send({message:"Not succesfull "})
+        }
+    } 
+    else{
+        res.status(400).send({message:"User not found"})
+    }
+
+   }
+      
+    }catch(err){
+        console.log(err)
+        res.status(500).send({message:"Error while accepting offer temporarily "})
+    }
+}
+
+// shopper confirm delivery
+exports.shopperConfirmDelivery = async(req,res)=>{
+   
+            
+    try{ 
+       const isUserHasPendingOffer = await Items.UserHasPendingOffer(req.user.id)
+       console.log(isUserHasPendingOffer.length)
+        if (isUserHasPendingOffer.length<0){
+            res.status(400).send({message:"user does not have any offer to cancel"})
+        }
+   else{
+
+    
+
+    const userDetails2 = await Members.findDetailsById(req.user.id)
+    if (userDetails2.length>0){
+
+        const offerbyid = await Items.findAcceptedWishlistById(req.params.offerId)
+        const totalPay = offerbyid[0].totalPay;
+        const initailBalanceBtc = userDetails2[0].walletBalanceBtc
+        const initailBalanceUsd = await getConversionInUsd(initailBalanceBtc) 
+        const noOfTransactions = parseInt(userDetails2[0].noOfTransactions) + 1
+        let type = "Earned"
+        let status = "Success"
+        let transactionDate = new Date();
+        console.log(initailBalanceUsd)
+        console.log(userDetails2[0].walletBalanceBtc)
+        console.log(totalPay)
+        console.log(userDetails2[0].noOfTransactions)
+        const totalPayBtc = await getConversionInBtc(totalPay)
+        console.log(totalPayBtc) 
+        
+    let finalBalanceBtc = parseFloat(initailBalanceBtc) + parseFloat(totalPayBtc)
+    const finalBalanceUsd = await getConversionInUsd(finalBalanceBtc) 
+      
+      const updatewallet = await Members.updateWallet(finalBalanceBtc, finalBalanceUsd, noOfTransactions, offerbyid[0].earnerId) 
+     
+      if(updatewallet.affectedRows > 0){
+        const createtransaction =await Payments.createTransactionSpend(totalPay, type, status, transactionDate, offerbyid[0].earnerId , offerbyid[0].id, totalPayBtc, initailBalanceBtc, finalBalanceBtc)
+      const confirmdelivery =await Items.confirmDelivery(req.params.offerId)
+      
+      res.status(200).send({message:"Confirm delevery succesfull "})
+
+        }else{
+            res.status(400).send({message:"Not succesfull "})
+        }
+    } 
+    else{
+        res.status(400).send({message:"User not found"})
+    }
+
+   }
+      
+    }catch(err){
+        console.log(err)
+        res.status(500).send({message:"Error while accepting offer temporarily "})
+    }
+}
+
+
+
+// earner cancel offer
+exports.earnerCancelOffer = async(req,res)=>{
+   
+            
+    try{ 
+       const isUserHasPendingOffer = await Items.UserHasPendingOffer(req.user.id)
+       console.log(isUserHasPendingOffer.length)
+        if (isUserHasPendingOffer.length<0){
+            res.status(400).send({message:"user does not have any offer to cancel"})
+        }
+   else{
+       let status ="Pending"
+       let earnerId= ""
+       let amazonOrderId = " "
+       let bitshopyOrderId = " "
+       let deliveryDate = " "
+       let orderLink = " "
+       let orderDate = " "
+
+
+        const cancelorder = await Items.earnerCancelOffer(status, earnerId, amazonOrderId,  bitshopyOrderId, deliveryDate, orderLink, orderDate, req.params.offerId)
+       if (cancelorder.affectedRows> 0)
+         {
+        res.status(200).send({message:"Cancel offer succesfull "})
+
+      }
+      else{
+        res.status(400).send({message:"Not succesfull "})
+      }
+
+   }
+      
+    }catch(err){
+        console.log(err)
+        res.status(500).send({message:"Error while accepting offer temporarily "})
+    }
+}
+
 
 // GET all order
 exports.getBtcRate = async(req, res) =>{

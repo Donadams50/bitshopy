@@ -6,7 +6,10 @@ const Items = require('../Items/items.model.js');
 // const Subscription = require('../Subscription/subscription.model')
  const passwordUtils =require('../Helpers/passwordUtils');
  const jwtTokenUtils = require('../Helpers/jwtTokenUtils')
+ const btcconversion = require('../Helpers/btcconversion')
 const sendemail = require('../Helpers/emailhelper.js');
+const { getConversionInBtc } = btcconversion;
+const { getConversionInUsd } = btcconversion;
 // const Notify = require('../Helpers/notifications.js')
  const { signToken } = jwtTokenUtils;
 const uuid = require('uuid')
@@ -180,8 +183,17 @@ exports.signIn = async(req,res)=>{
                         const tokens = signToken(id, username, email, level) 
                          const user = userDetails[0]
                          const getPriviledges1 = await Members.findLevelDetails(userDetails[0].level)
-                         
+                         const walletbalanceusd = await getConversionInUsd(userDetails[0].walletBalanceBtc) 
+                         console.log("walletbalanceusd")
+                         console.log(walletbalanceusd)
+                            user.walletBalanceUsd = walletbalanceusd;
                           const noOfOffer = await Items.findNumberOfOffer(userDetails[0].id)
+                           let totalSaved = 0
+                          for( var i = 0; i < noOfOffer.length; i++){
+                              
+                            totalSaved = parseFloat(totalSaved)+ parseFloat(noOfOffer[i].savedFee)
+                            console.log(totalSaved)
+                          }
                           console.log(noOfOffer)
                           if ( userDetails[0].noOfTransactions > 5 || userDetails[0].level === 0){
                             user.makeOfferAsShopper=true
@@ -200,6 +212,7 @@ exports.signIn = async(req,res)=>{
                           if ( userDetails[0].noOfTransactions < getPriviledges1[0].transactionLimit ||userDetails[0].level  === 0 || userDetails[0].level=== 5 ){
                             user.makeTransactionAsEarners=true
                             user.priviledgesAsEarners=getPriviledges1[0]
+                            user.totalSaved = totalSaved;
                             user.token = tokens
                             res.status(200).send(user)
 
@@ -215,6 +228,7 @@ exports.signIn = async(req,res)=>{
                             user.priviledgesAsEarners=getPriviledges[0]
                             user.token = tokens1;
                             user.makeTransactionAsEarners=true;
+                            user.totalSaved = totalSaved;
                             res.status(200).send(user)
                           }
 
@@ -300,7 +314,7 @@ exports.setnewPassword = async(req,res)=>{
         const isCred = await Members.findByEmail(email.toLowerCase())
         const isMember = await Members.findDetailsByEmail(email.toLowerCase())
         if (isCred.length>0 && isMember.length>0){
-            const isCodeValid = await Members.findForgotPasswordCod(code,email.toLowerCase())
+            const isCodeValid = await Members.findForgotPasswordCode(code,email.toLowerCase())
             if (isCodeValid.length>0){
             newpassword = await passwordUtils.hashPassword(password.toLowerCase());
            const updatePassword = await Members.updatePassword(email.toLowerCase(), newpassword)
@@ -321,6 +335,6 @@ exports.setnewPassword = async(req,res)=>{
         
     }catch(err){
         console.log(err)
-        res.status(500).json(err)
+        res.status(500).json({message:"An error occurred"})
     }
 }

@@ -44,6 +44,8 @@ const Items = function(){
             return (err)
         }
       }
+
+
      // create wish list items
       
     Items.createItems = async function(wishlistItems, wishlistTableId, wishlistId){
@@ -73,7 +75,7 @@ const Items = function(){
      Items.getAllOffer= async function(shopperId){
     try{
         let status = "Pending";
-        const result = await sql.query('SELECT * FROM wishlist where status=?  AND shopperId!=?', [status, shopperId])
+        const result = await sql.query('SELECT * FROM wishlist where status=? ', [status])
         const data= result[0]
         return data
     }catch(err){
@@ -131,12 +133,25 @@ const result = await sql.query('SELECT w.* , p.username, p.level FROM wishlist w
     }
   }  
 
-  
+  // earner has pending offer ?
   Items.UserHasPendingOffer= async function(userid){
     try{  
          let status = "Completed"
         let status2 = "Pending"
         const result = await sql.query('SELECT * FROM wishlist where (status!=? OR status!=?) AND earnerId=?', [status, status2 ,userid])
+        const data= result[0]
+        return data
+    }catch(err){
+     //   console.log(err)
+        return (err)
+    }
+  }
+
+  // shopper has pending offer??
+  Items.shopperHasPendingOffer= async function(userid){
+    try{  
+        let status = "Pending"
+        const result = await sql.query('SELECT * FROM wishlist where status=? AND shopperId=?', [status, userid])
         const data= result[0]
         return data
     }catch(err){
@@ -224,7 +239,115 @@ const result = await sql.query('SELECT w.* , p.username, p.level FROM wishlist w
     }
   }
 
+  
+       // check if wish list exist
+  Items.findPendingWishlistById= async function(id){
+        try{
+            let status ="Pending"
+            const result = await sql.query('SELECT * FROM wishlist where id=? AND status=?', [id , status])
+            const data= result[0]
+            return data
+        }catch(err){
+         //   console.log(err)
+            return (err)
+        }
+      }
+         // check if wish list exist
+  Items.findAcceptedWishlistById= async function(id){
+    try{
+        let status ="Pending"
+        let status1 = "Completed"
+        const result = await sql.query('SELECT * FROM wishlist where id=? AND status!=? AND status!=?', [id , status, status1])
+        const data= result[0]
+        return data
+    }catch(err){
+     //   console.log(err)
+        return (err)
+    }
+  }
 
+// delete offer
+Items.deleteOffer= async function(id){
+  const connection = await sql.getConnection();
+     await connection.beginTransaction();
+    try
+    {    
+     let  data= {}
+     
+         const result = await connection.query('Delete from wishlist  where id=?  ', [id])
+         const result1 = await connection.query('Delete from wishlistitems  where wishlistTableId=?  ', [id])
+         const result2 = await connection.query('Delete from transactions  where wishlistTableId=?  ', [id])
+          
+            await connection.commit();
+            data.result3 = result[0]
+            data.result4 = result1[0]
+            data.result5 = result2[0]
+            return data
+
+         
+                                                                                                   
+              
+    }catch(err){
+         await connection.rollback();
+         console.log(err)
+         return err
+    }finally{
+        connection.release();
+    }
+}
+
+
+// shopper confirm delivery
+Items.confirmDelivery = async function(id){
+  const connection = await sql.getConnection();
+   await connection.beginTransaction();
+  try
+  {    
+    let status = "Completed"
+   
+       const result = await connection.query('update wishlist SET status=?,  where id=?  ', [ status ,  id])
+  
+        
+          await connection.commit();
+          return result[0]
+
+       
+                                                                                                 
+            
+  }catch(err){
+       await connection.rollback();
+       console.log(err)
+       return err
+  }finally{
+      connection.release();
+  }
+}
+
+
+// earner cancel offer
+Items.earnerCancelOffer = async function(status, earnerId, amazonOrderId,  bitshopyOrderId, deliveryDate, orderLink, orderDate, offerId){
+  const connection = await sql.getConnection();
+   await connection.beginTransaction();
+  try
+  {    
+   
+       const result = await connection.query('update wishlist SET status=?, earnerId=?, amazonOrder=?, bitshopyOrder=?, deliveryDate=?, orderLink=?, orderDate=?  where id=?  ', [status, earnerId, amazonOrderId,  bitshopyOrderId, deliveryDate, orderLink, orderDate, offerId])
+  
+       const result1 = await connection.query('Delete from ordertable  where wishlistTableId=?  ', [offerId])
+          await connection.commit();
+          return result[0]
+
+       
+                                                                                                 
+            
+  }catch(err){
+       await connection.rollback();
+       console.log(err)
+       return err
+  }finally{
+      connection.release();
+  }
+}
 
   // get all offer
  Items.getImageUrl= async function(wishlistTableId){

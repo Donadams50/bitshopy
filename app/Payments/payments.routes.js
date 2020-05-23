@@ -9,6 +9,8 @@ module.exports = app =>{
 
     app.post("/withdrawfund", verifyToken, payments.withdrawPayment)
 
+    app.get("/transactionhistory", verifyToken, payments.getTransactionHistory)
+
 
    
 
