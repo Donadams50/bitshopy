@@ -438,7 +438,7 @@ console.log(Difference_In_Time)
    console.log(diffInMinutes)
 if (diffInMinutes >= 30){
      let link = item.orderLink;
-  getStatus= await axios.get( 'https://www.amazon.com/progress-tracker/package/ref=ppx_yo_dt_b_track_package?_encoding=UTF8&itemId=lilooqimtpkpwn&orderId=113-7405363-0300238&packageIndex=0&shipmentId=DsWK8pBzT&vt=YOUR_ORDERS' ) 
+  getStatus= await axios.get( ''+link+'' ) 
   // console.log(getAddress.data)
 
     
@@ -517,31 +517,31 @@ function millisToMinutesAndSeconds(millis) {
 
 
 // second cron
-// var validatePayment = cron.schedule('* * * * *', async function() {
-//     console.log("i ran 3");
-//     const connection = await sql.getConnection()
-//     await connection.beginTransaction()
-//     try{
-//       let status = "Not shipped yet"
-//       let status1 = "Shipped"
-//       let status2 = "Cancelled"
-//       let status3= "Delivered"
+var validatePayment = cron.schedule('50 11 * * *', async function() {
+    console.log("i ran 3");
+    const connection = await sql.getConnection()
+    await connection.beginTransaction()
+    try{
+      let status = "Not shipped yet"
+      let status1 = "Shipped"
+      let status2 = "Cancelled"
+      let status3= "Delivered"
       
 
-//         const processOrder = await connection.query('select * from wishlist where status=? OR status =? OR status=? OR status=? ', [status, status1, status2, status3])
-//      console.log(processOrder[0].length)
-//         processArrayFinalPayment(processOrder[0])
-//        await connection.commit();
-//     }catch(err){
-//        // console.log(err) 
-//         await connection.rollback();
-//     }finally{
-//         connection.release() 
-//     }
-//  // console.log('You will see this message every 15 minutes');
+        const processOrder = await connection.query('select * from wishlist where status=? OR status =? OR status=? OR status=? ', [status, status1, status2, status3])
+     console.log(processOrder[0].length)
+        processArrayFinalPayment(processOrder[0])
+       await connection.commit();
+    }catch(err){
+       // console.log(err) 
+        await connection.rollback();
+    }finally{
+        connection.release() 
+    }
+ // console.log('You will see this message every 15 minutes');
 
-// })
-//validatePayment.start();
+})
+validatePayment.start();
  
  //  loop handler
  async function processArrayFinalPayment(array) {
@@ -658,7 +658,7 @@ const connection = await sql.getConnection();
 else{
 
   let link = item.orderLink;
-  getStatus= await axios.get( 'https://www.amazon.com/progress-tracker/package/ref=ppx_yo_dt_b_track_package?_encoding=UTF8&itemId=lilooqimtpkpwn&orderId=113-7405363-0300238&packageIndex=0&shipmentId=DsWK8pBzT&vt=YOUR_ORDERS' ) 
+  getStatus= await axios.get( ''+link+'' ) 
   let re = /(Delivered\s\<\w+\s\w+\=\"\w+\"\>\w+\s\d+)/g;
 
   let found = getStatus.data.match(re);
