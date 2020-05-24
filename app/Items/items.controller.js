@@ -166,11 +166,13 @@ console.log(req.body)
             
             try{ 
                 const userDetails2 = await Members.findDetailsById(shopperId)
-                if (userDetails2[0].walletBalanceUsd < totalPay){
+                const walletbalancebtcTotalPay = await getConversionInBtc(totalPay)
+                if (userDetails2[0].walletBalanceBtc <= walletbalancebtcTotalPay){
                     res.status(400).send({message:"Insufficient Fund"})
-                } else if(totalPay > 999 || totalPay< 3.99){
-                    res.status(400).send({message:"Listing amount too low or too high"})
                 }
+                // else if(totalPay > 999 || totalPay< 3.99){
+                //     res.status(400).send({message:"Listing amount too low or too high"})
+                // }
                 else{
                 const isWishListExist = await Items.findByWishlistId(wishlistId , wishlistUrl)
                 if (isWishListExist.length>0){
@@ -312,7 +314,7 @@ exports.getAllOfferQualifiedFor= async(req, res) =>{
         }
             const allOffer = await Items.getAllOfferQualifiedFor(discount, orderSizeLimit,req.user.id )
             console.log(allOffer)
-            if (allOffer.length > 0){
+            if (allOffer.length >= 0){
                 logger.log({
                     level: 'info',
                     message: 'group added to database'
@@ -326,10 +328,7 @@ exports.getAllOfferQualifiedFor= async(req, res) =>{
                     console.log(getBtcPrice.data)
                   }
                 res.status(200).send(allOffer)
-            }else if(allOffer.length=== 0){
-                //     console.log(allGroup.length)
-                     res.status(204).send( allOffer)
-                 }
+            }
             else{
                 
                 res.status(400).send({message:"error while getting offer"}) 
@@ -473,6 +472,8 @@ async function PersistOneByOne2(wishlistItems, wishlistTableId, wishlistId ){
   }
 
 }  
+
+
 // accept offer
 exports.acceptOfferTemp = async(req,res)=>{
     if (!req.body){
@@ -507,7 +508,7 @@ console.log(req.body)
              const createorder = await Items.acceptOfferTemp( req.params.offerId, status, req.user.id)
           //   console.log(createorder.affectedRows)
              if (createorder.affectedRows === 1){
-                const createorder = await Items.sendMessage( req.params.offerId, test, req.user.id)
+                //const createorder = await Items.sendMessage( req.params.offerId, test, req.user.id)
                 res.status(200).send( {message:"Temporary Offer Accepted succesfully"})
                                
              }else{
@@ -525,6 +526,8 @@ console.log(req.body)
 
 
 }
+
+
 // cancel temp offer
 exports.cancelOfferTemp = async(req,res)=>{
    
@@ -691,12 +694,12 @@ exports.shopperCancelOffer = async(req,res)=>{
         const totalPayBtc = await getConversionInBtc(totalPay)
         console.log(totalPayBtc) 
         
-    let finalBalanceBtc = parseFloat(initailBalanceBtc) - parseFloat(totalPayBtc)
+    let finalBalanceBtc = parseFloat(initailBalanceBtc) + parseFloat(totalPayBtc)
     const finalBalanceUsd = await getConversionInUsd(finalBalanceBtc) 
       
       const updatewallet = await Members.updateWallet(finalBalanceBtc, finalBalanceUsd, noOfTransactions, req.user.id) 
       if(updatewallet.affectedRows > 0){
-      const deleteoffer =await Payments.deleteOffer(req.params.offerId)
+      const deleteoffer =await Items.deleteOffer(req.params.offerId)
          if(deleteoffer){
             res.status(200).send({message:"Succesfully cancelled transaction"}) 
          }else{
@@ -714,7 +717,7 @@ exports.shopperCancelOffer = async(req,res)=>{
       
     }catch(err){
         console.log(err)
-        res.status(500).send({message:"Error while accepting offer temporarily "})
+        res.status(500).send({message:"Error while cancel offer temporarily "})
     }
 }
 
@@ -731,11 +734,11 @@ exports.shopperConfirmDelivery = async(req,res)=>{
    else{
 
     
-
-    const userDetails2 = await Members.findDetailsById(req.user.id)
+    const offerbyid = await Items.findAcceptedWishlistById(req.params.offerId)
+    const userDetails2 = await Members.findDetailsById(offerbyid[0].earnerId)
     if (userDetails2.length>0){
 
-        const offerbyid = await Items.findAcceptedWishlistById(req.params.offerId)
+        
         const totalPay = offerbyid[0].totalPay;
         const initailBalanceBtc = userDetails2[0].walletBalanceBtc
         const initailBalanceUsd = await getConversionInUsd(initailBalanceBtc) 
@@ -782,7 +785,13 @@ exports.shopperConfirmDelivery = async(req,res)=>{
 // earner cancel offer
 exports.earnerCancelOffer = async(req,res)=>{
    
-            
+    if (!req.body){
+        res.status(400).send({message:"Content cannot be empty"});
+    }
+console.log(req.body)
+           
+    const {  offerId, reason} = req.body;
+    
     try{ 
        const isUserHasPendingOffer = await Items.UserHasPendingOffer(req.user.id)
        console.log(isUserHasPendingOffer.length)
@@ -799,9 +808,10 @@ exports.earnerCancelOffer = async(req,res)=>{
        let orderDate = " "
 
 
-        const cancelorder = await Items.earnerCancelOffer(status, earnerId, amazonOrderId,  bitshopyOrderId, deliveryDate, orderLink, orderDate, req.params.offerId)
+        const cancelorder = await Items.earnerCancelOffer(status, earnerId, amazonOrderId,  bitshopyOrderId, deliveryDate, orderLink, orderDate, offerId,reason, req.user.id)
        if (cancelorder.affectedRows> 0)
          {
+          
         res.status(200).send({message:"Cancel offer succesfull "})
 
       }
@@ -813,9 +823,10 @@ exports.earnerCancelOffer = async(req,res)=>{
       
     }catch(err){
         console.log(err)
-        res.status(500).send({message:"Error while accepting offer temporarily "})
+        res.status(500).send({message:"Error while cancelling offer"})
     }
 }
+
 
 
 // GET all order

@@ -240,7 +240,7 @@ exports.signIn = async(req,res)=>{
                 
             }catch(err){
                 console.log(err)
-                res.status(500).json(err)
+                res.status(500).json({message:"Service not available"})
             }  
         }
     }else{
@@ -334,6 +334,151 @@ exports.setnewPassword = async(req,res)=>{
         }
         
     }catch(err){
+        console.log(err)
+        res.status(500).json({message:"An error occurred"})
+    }
+}
+
+// change email
+exports.changeEmail = async(req,res)=>{
+    let {email, username} = req.body
+    console.log(username)
+    console.log(email)
+    try{
+        const isMember = await Members.findUsername(username)
+  console.log(isMember)
+       
+        if (isMember.length>0 ){
+             const isEmailExist = await Members.findByEmail(email.toLowerCase())
+      
+                        if (isEmailExist.length>0){
+                            res.status(400).send({message:"Email already exists choose another email"})
+                
+                                    
+                            }else{
+                                
+                    const updateEmail = await Members.updateEmail(isMember[0].email.toLowerCase(), email.toLowerCase())
+                                if (updateEmail.affectedRows === 1){
+                                
+                                        res.status(200).send({message:"Email changed succesfull"})
+                                            }else{
+                                                res.status(500).send({message:"An error occured"})
+                                            }   
+                                        }
+       
+        }else{
+            res.status(400).send({message:"User name does not exists"})
+           
+        }
+        
+    }catch(err){
+        console.log(err)
+        res.status(500).json({message:"An error occurred"})
+    }
+}
+
+
+// change password
+exports.changePassword = async(req,res)=>{
+    let {currentPassword, newPassword} = req.body
+    console.log(currentPassword)
+    console.log(newPassword)
+    try{
+        console.log(req.user.email)
+        const user = await Members.findByEmail(req.user.email.toLowerCase())
+        console.log(user)
+        if (user.length<1){
+            res.status(404).send({message:"User not found"})
+        }else{
+            const retrievedPassword = user[0].password
+        const isMatch = await passwordUtils.comparePassword(currentPassword.toLowerCase(), retrievedPassword);
+        console.log(isMatch)
+        if (isMatch){
+            
+            newpassword = await passwordUtils.hashPassword(newPassword.toLowerCase());
+            const updatePassword = await Members.updatePassword(req.user.email.toLowerCase(), newpassword)
+            if (updatePassword.affectedRows===1){
+                 res.status(200).send({message:"Password updated"})
+                     }else{
+                         res.status(500).send({message:"Password  not updated"})
+                     }  
+           
+        }else{
+            res.status(400).json({message:"Incorrect current password"})
+        }
+    }
+    }catch(err){
+        console.log(err)
+        res.status(500).json({message:"An error occurred"})
+    }
+}
+// get user
+
+//change password
+exports.getUser = async(req,res)=>{
+   
+    try{
+        const user ={}
+        const userDetails = await Members.findDetailsById(req.params.id)
+    
+        if (user.length<1){
+            res.status(200).send({message:"User not found"})
+        }else{
+            
+            const user = userDetails[0]
+                         const getPriviledges1 = await Members.findLevelDetails(userDetails[0].level)
+                         const walletbalanceusd = await getConversionInUsd(userDetails[0].walletBalanceBtc) 
+                         console.log("walletbalanceusd")
+                         console.log(walletbalanceusd)
+                            user.walletBalanceUsd = walletbalanceusd;
+                          const noOfOffer = await Items.findNumberOfOffer(userDetails[0].id)
+                           let totalSaved = 0
+                          for( var i = 0; i < noOfOffer.length; i++){
+                              
+                            totalSaved = parseFloat(totalSaved)+ parseFloat(noOfOffer[i].savedFee)
+                            console.log(totalSaved)
+                          }
+                          console.log(noOfOffer)
+                          if ( userDetails[0].noOfTransactions > 5 || userDetails[0].level === 0){
+                            user.makeOfferAsShopper=true
+                            user.maximumDiscountAsShopper= 100
+                            user.maximumOfferPrice= 999
+                            user.minimumOfferPrice= 3.99
+                          }else if( noOfOffer.length <= 10  ){
+                            user.makeOfferAsShopper=true
+                            user.maximumDiscountAsShopper= 10
+                            user.maximumOfferPrice= 999
+                            user.minimumOfferPrice= 3.99
+                          }
+                          else{
+                            user.makeOfferAsShoper=false
+                          }
+                          if ( userDetails[0].noOfTransactions < getPriviledges1[0].transactionLimit ||userDetails[0].level  === 0 || userDetails[0].level=== 5 ){
+                            user.makeTransactionAsEarners=true
+                            user.priviledgesAsEarners=getPriviledges1[0]
+                            user.totalSaved = totalSaved;
+                            
+                            res.status(200).send(user)
+
+                          }else if( userDetails[0].noOfTransactions >= getPriviledges1[0].transactionLimit ){
+                              console.log(userDetails[0].level)
+                              const newLevel = parseInt(userDetails[0].level) + 1
+                            const updatelevel = await Members.updateLevel(userDetails[0].id, newLevel)
+                            const userDetails2 = await Members.findDetailsByEmail(userDetails[0].email.toLowerCase())
+                           const   {id , username,  email, level}= userDetails2[0]
+                            const getPriviledges = await Members.findLevelDetails(userDetails2[0].level)
+                            
+                             user = userDetails2[0]
+                            user.priviledgesAsEarners=getPriviledges[0]
+                           
+                            user.makeTransactionAsEarners=true;
+                            user.totalSaved = totalSaved;
+                            res.status(200).send(user)
+                          }
+        }
+        
+    }
+    catch(err){
         console.log(err)
         res.status(500).json({message:"An error occurred"})
     }

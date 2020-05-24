@@ -20,16 +20,41 @@ exports.getAddress = async(req, res) =>{
          
           getAddress = await axios.get( 'https://block.io/api/v2/get_new_address/?api_key='+process.env.api_key+'&label='+label+'' ) 
           console.log(getAddress.data)
-    //    getAddress = await axios.get( 'https://www.amazon.com/progress-tracker/package/ref=ppx_yo_dt_b_track_package?_encoding=UTF8&itemId=lhslmolqtlttwn&orderId=114-0911325-3822665&shipmentId=UfFgRK2kJ&vt=YOUR_ORDERS' ) 
-       // console.log(getAddress.data)
-     //   let wishlist =  JSON.stringify(getAddress.data)
-    //    let re = /(milestone-primaryMessage\"\>\w+\<\/\w+\>)/g;
+    //    getAddress = await axios.get( 'https://www.amazon.com/progress-tracker/package/ref=ppx_yo_dt_b_track_package?_encoding=UTF8&itemId=lilooqimtpkpwn&orderId=113-7405363-0300238&packageIndex=0&shipmentId=DsWK8pBzT&vt=YOUR_ORDERS' ) 
+    // // console.log(getAddress.data)
+    //    let wishlist =  JSON.stringify(getAddress.data)
+    //    let re = /(Delivered\s\<\w+\s\w+\=\"\w+\"\>\w+\s\d+)/g;
 
-        // let found = getAddress.data.match(re);
-        // console.log(found);
-  
+    //     let found = getAddress.data.match(re);
+    //             if(found === null){
+    //                 let re5= /(Shipped\s\<\w+\s\w+\=\"\w+\"\>\w+\,\s\w+\s\d+)/g;     
+                    
+    //             let found5 =  getAddress.data.match(re5);
+               
+    //             if(found5 === null){
+    //                 let re6= /(Ordered\s\<\w+\s\w+\=\"\w+\"\>\w+\,\s\w+\s\d+)/g;     
+                    
+    //             let found6 =  getAddress.data.match(re6);
+    //             console.log(found6);
+    //             wid = found6[0]
+    //             status = "Not shipped yet"
+    //             console.log(wid)
+    //             } else{
+    //                 console.log(found5);
+    //                 wid = found5[0]
+    //                 console.log(wid)
+    //                 status = "Shipped"
+    //             }
+                
+    //         } else{
+    //             console.log(found);
+    //             wid = found[0]
+    //             console.log(wid)
+    //             status = "Delivered"
+    //         }
+       
              res.status(200).send(getAddress.data)
-            }
+             }
        
     catch(err){
      console.log(err)

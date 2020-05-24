@@ -21,7 +21,7 @@ const Members = function(members){
     // this.bankname=members.bankName
     
 }
-// find memebers by username
+// find memebers by username or email
 Members.findByUsername= async function(username, email){
     try{
         const result = await sql.query('SELECT * from profile where username =? OR email=?', [username, email])
@@ -35,6 +35,22 @@ Members.findByUsername= async function(username, email){
         return (err)
     }
 }
+
+// find memebers by username or email
+Members.findUsername= async function(username){
+    try{
+        const result = await sql.query('SELECT * from profile where username =? ', [username])
+        const data=result[0]
+        console.log(data)
+        console.log('-------------------------------------------------------CHECKING IF USERNAME EXISTS---------------')
+        return data
+    }catch(err){
+        console.log(err)
+        console.log('--------------------------------------------err--------------------------------------------------------')
+        return (err)
+    }
+}
+
 // find level details
 Members.findLevelDetails= async function(level){
     try{
@@ -68,7 +84,7 @@ Members.create = async function(newMember){
     try
     {
         console.log(newMember)
-         const result = await connection.query('INSERT into profile SET username=?, level=?, code=?, ratings=?, isVerified=?, walletBalanceUsd=?, walletBalanceBtc=?, noOfRatings=?, email=?, noOfTransactions=?', [newMember.username, newMember.level, newMember.code, newMember.ratings, newMember.isVerified, newMember.walletBalanceUsd, newMember.walletBalanceBtc, newMember.noOfRatings, newMember.email, newMember.no])
+         const result = await connection.query('INSERT into profile SET username=?, level=?, code=?, ratings=?, isVerified=?, walletBalanceUsd=?, walletBalanceBtc=?, noOfRatings=?, email=?, noOfTransactions=?', [newMember.username, newMember.level, newMember.code, newMember.ratings, newMember.isVerified, newMember.walletBalanceUsd, newMember.walletBalanceBtc, newMember.noOfRatings, newMember.email, newMember.noOfTransactions])
          if (result[0].insertId){
              await connection.query('INSERT INTO member_authentication_table SET email=?, password=?', [newMember.email, newMember.password])
              console.log('---------------------------------Credentials filled------------------------------------------------------------------------------------------------------')
@@ -209,6 +225,30 @@ Members.updateWallet= async function(finalBalanceBtc, finalBalanceUsd, noOfTrans
     }
 }
 
+//set new password
+Members.updateEmail= async function(oldEmail, newEmail){
+        const connection = await sql.getConnection();
+        await connection.beginTransaction();
+       try
+       {    
+        
+            const result = await connection.query('update member_authentication_table set email=? where email=?',[newEmail, oldEmail])
+       
+            const result1 = await connection.query('update profile set email=? where email=?',[newEmail, oldEmail])
+               await connection.commit();
+               return result[0]
+     
+            
+                                                                                                      
+                 
+       }catch(err){
+            await connection.rollback();
+            console.log(err)
+            return err
+       }finally{
+           connection.release(); 
+}
+}
 
 
 //save forgot password code

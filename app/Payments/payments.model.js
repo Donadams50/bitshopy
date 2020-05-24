@@ -41,25 +41,25 @@ Payments.createTransaction = async function( amountBtc, type, status,transaction
 
 
  // create transation for importing wishlist
-Payments.createTransactionSpend = async function( totalPay, type, status, transactionDate, shopperId , wishlistTableId, amountBtc, initailBalanceBtc, finalBalanceBtc){
-  const connection = await sql.getConnection();
-   await connection.beginTransaction();
-  try
-  {
+// Payments.createTransactionSpend = async function( totalPay, type, status, transactionDate, shopperId , wishlistTableId, amountBtc, initailBalanceBtc, finalBalanceBtc){
+//   const connection = await sql.getConnection();
+//    await connection.beginTransaction();
+//   try
+//   {
      
-       const result = await connection.query('INSERT into transactions SET  amountUsd=?  type=?, status=?, transactionDate=?, userId=?, wishlistTableId=?, amountBtc=?, initailBalance=?,finalBalance=? ', [totalPay, type, status, transactionDate, shopperId , wishlistTableId, amountBtc, initailBalanceBtc, finalBalanceBtc])
+//        const result = await connection.query('INSERT into transactions SET  amountUsd=?  type=?, status=?, transactionDate=?, userId=?, wishlistTableId=?, amountBtc=?, initialBalance=?,finalBalance=? ', [totalPay, type, status, transactionDate, shopperId , wishlistTableId, amountBtc, initailBalanceBtc, finalBalanceBtc])
                                                                                                                
-           await connection.commit();
-           return result[0]
+//            await connection.commit();
+//            return result[0]
             
-  }catch(err){
-       await connection.rollback();
-       console.log(err)
-       return err
-  }finally{
-      connection.release();
-  }
-}
+//   }catch(err){
+//        await connection.rollback();
+//        console.log(err)
+//        return err
+//   }finally{
+//       connection.release();
+//   }
+// }
 
 
  // create transaction for withdrawer

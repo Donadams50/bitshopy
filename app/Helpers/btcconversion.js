@@ -7,7 +7,7 @@ exports.getConversionInBtc= async function(valueUsd) {
     let cors ="true"
     let currency = "USD"
   getBtcPrice = await axios.get('https://blockchain.info/tobtc?currency='+currency+'&value='+valueUsd+'&cors='+cors+'' )
-      allOffer[i].btcPrice = getBtcPrice.data
+     
       console.log(getBtcPrice.data)
     
     return getBtcPrice.data;

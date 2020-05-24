@@ -1,8 +1,8 @@
 module.exports = app =>{
     const member = require("../Members/members.controller");
   //  const authentication = require('../Helpers/authentication')
-  //  const jwtTokenUtils = require('../Helpers/jwtTokenUtils')
-  //  const { verifyToken } = jwtTokenUtils;
+   const jwtTokenUtils = require('../Helpers/jwtTokenUtils')
+   const { verifyToken } = jwtTokenUtils;
     // Create a new community
     app.post("/member", member.create); 
 
@@ -16,6 +16,12 @@ module.exports = app =>{
     app.post("/forgotpassword", member.forgotPassword); 
     
     app.post("/setnewpassword", member.setnewPassword); 
+
+    app.post("/changeemail",  verifyToken,  member.changeEmail); 
+
+    app.post("/changepassword", verifyToken,  member.changePassword); 
+
+    app.get("/user/:id", verifyToken,  member.getUser); 
     // Sign In member
   //  app.post("/user_auth", member.signIn); 
 

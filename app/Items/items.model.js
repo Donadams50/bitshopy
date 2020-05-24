@@ -3,6 +3,13 @@ const cron = require('node-cron');
 const axios = require('axios');
 const dotenv = require('dotenv');
 dotenv.config();
+const btcconversion = require('../Helpers/btcconversion')
+const { getConversionInBtc } = btcconversion;
+const { getConversionInUsd } = btcconversion;
+
+function delay() {
+  return new Promise(resolve => setTimeout(resolve, 300));
+}
 
 const Items = function(){
     
@@ -86,15 +93,17 @@ const Items = function(){
 
 // get all offer qualified for by a user
 
-  Items.getAllOfferQualifiedFor= async function(discount, orderSizeLimit, shopperId){
+  Items.getAllOfferQualifiedFor= async function(discount, orderSizeLimit, userId){
     try{ 
         let status = "Pending";
+        let status2= "Accepted"
         
 
 // const result = await sql.query('SELECT * , profile.username, profile.level FROM wishlist INNER JOIN profile ON wishlist.shopperId = profile.id where status=? AND discount>=? AND totalPay<=? AND shopperId!=?', [status, discount, orderSizeLimit,shopperId])
-const result = await sql.query('SELECT w.* , p.username, p.level FROM wishlist w, profile p where w.shopperId = p.id AND (w.status=? AND w.discount>=? AND w.totalPay<=? OR w.shopperId=?) ', [status, discount, orderSizeLimit, shopperId])
-      //  const result = await sql.query('SELECT * FROM wishlist where status=? AND discount>=? AND totalPay<=?', [status, discount, orderSizeLimit])
-  // console.log(result[0])
+const result = await sql.query('SELECT w.* , p.username, p.level FROM wishlist w, profile p where ((w.shopperId = p.id AND w.shopperId=?) OR (w.earnerId = p.id  AND w.earnerId=? AND w.status=? ) OR ( w.shopperId = p.id AND w.discount>=? AND w.totalPay<=?  AND w.status=?)) ', [userId, userId, status2, discount, orderSizeLimit,  status])
+//const result = await sql.query('SELECT w.*, p.username, p.level FROM wishlist w, profile p where ((w.shopperId = p.id AND w.shopperId=?) OR ( w.earnerId = p.id AND w.earnerId=? AND w.status!=? AND w.status!=? ))  ', [userId, userId,  status, status2])      
+//  const result = await sql.query('SELECT * FROM wishlist where status=? AND discount>=? AND totalPay<=?', [status, discount, orderSizeLimit])
+  console.log(result[0])
         const data= result[0]
         return data
     }catch(err){
@@ -222,13 +231,16 @@ const result = await sql.query('SELECT w.* , p.username, p.level FROM wishlist w
 
       if (type === "Active"){
         let status = "Completed"
-        const result = await sql.query('SELECT w.*, p.username, p.level FROM wishlist w, profile p where ((w.shopperId = p.id AND w.shopperId=?) OR ( w.earnerId = p.id AND w.earnerId=?)) AND w.status!=? ', [userId, userId,  status])
+        let status2 = "Accepted"
+        let status3 = "Pending"
+        const result = await sql.query('SELECT w.*, p.username, p.level FROM wishlist w, profile p where (w.shopperId = p.id AND w.shopperId=? AND status=?) OR (w.earnerId = p.id AND w.shopperId=? AND status!=?) OR ( w.earnerId = p.id AND w.earnerId=? AND w.status!=? AND w.status!=? )  ', [userId, status3,userId, status, userId,  status, status2])
        // 'SELECT w.* , p.username, p.level FROM wishlist w, profile p where w.shopperId = p.id AND w.status=? AND w.discount>=? AND w.totalPay<=? 
         const data= result[0]
+        console.log(data)
         return data
       }else if (type === "Previous"){
         let status = "Completed"
-        const result = await sql.query('SELECT w.*, p.username, p.level FROM wishlist w, profile p where ((w.shopperId = p.id AND w.shopperId=?) OR ( w.earnerId = p.id AND w.earnerId=?)) AND w.status=? ', [userId, userId, status])
+        const result = await sql.query('SELECT w.*, p.username, p.level FROM wishlist w, profile p where (w.shopperId = p.id AND w.shopperId=? AND w.status=?) OR ( w.earnerId = p.id AND w.earnerId=? AND w.status=?) ', [userId, status, userId, status])
       
         const data= result[0]
         return data
@@ -305,7 +317,7 @@ Items.confirmDelivery = async function(id){
   {    
     let status = "Completed"
    
-       const result = await connection.query('update wishlist SET status=?,  where id=?  ', [ status ,  id])
+       const result = await connection.query('update wishlist SET status=?, where id=?  ', [ status ,  id])
   
         
           await connection.commit();
@@ -325,7 +337,7 @@ Items.confirmDelivery = async function(id){
 
 
 // earner cancel offer
-Items.earnerCancelOffer = async function(status, earnerId, amazonOrderId,  bitshopyOrderId, deliveryDate, orderLink, orderDate, offerId){
+Items.earnerCancelOffer = async function(status, earnerId, amazonOrderId,  bitshopyOrderId, deliveryDate, orderLink, orderDate, offerId, reason, realEarnerId){
   const connection = await sql.getConnection();
    await connection.beginTransaction();
   try
@@ -334,6 +346,7 @@ Items.earnerCancelOffer = async function(status, earnerId, amazonOrderId,  bitsh
        const result = await connection.query('update wishlist SET status=?, earnerId=?, amazonOrder=?, bitshopyOrder=?, deliveryDate=?, orderLink=?, orderDate=?  where id=?  ', [status, earnerId, amazonOrderId,  bitshopyOrderId, deliveryDate, orderLink, orderDate, offerId])
   
        const result1 = await connection.query('Delete from ordertable  where wishlistTableId=?  ', [offerId])
+       const result2 =  await connection.query('INSERT INTO earnercancelreason SET  reason=?, wishlistTableId=?, earnerId=?', [ reason, offerId, realEarnerId])
           await connection.commit();
           return result[0]
 
@@ -365,111 +378,174 @@ Items.earnerCancelOffer = async function(status, earnerId, amazonOrderId,  bitsh
 
   
 
-// Cron Jobs runs Here
-// var payment = cron.schedule('*\10 * * * *', async function() {
-//   //console.log("i ran");
-//   payment.stop();
-//    const connection = await sql.getConnection()
-//    await connection.beginTransaction()
-//    try{
-//      let status = "Waiting for confimation"
-//        const unprocessOrder = await connection.query('select * from wishlist where status =?', [status])
-//       console.log(unprocessOrder[0])
-       
-//        init = await processArray(unprocessOrder[0]);
-//        console.log(init)
-//        if(init === "done"){
-//          payment.start();
-//          console.log("i am re-starting")
-//         }else{
-//          console.log("error from return statement")
-//         }
+//Cron Jobs runs Here
+var payment1 = cron.schedule('*\10 * * * *', async function() {
+  console.log("30 mins");
+  payment1.stop();
+   const connection = await sql.getConnection()
+   await connection.beginTransaction()
+   try{
+     let status = "Waiting for confirmation"
+       const unprocessOrder = await connection.query('select * from wishlist where status =?', [status])
+  //    console.log(unprocessOrder[0])
+      console.log("ff")
+       init = await processArray(unprocessOrder[0]);
+       console.log(init)
+       if(init === "done"){
+         payment1.start();
+         console.log("i am re-starting")
+        }else{
+         console.log("error from return statement")
+        }
 
-//       await connection.commit();
-//    }catch(err){
-//      //  console.log(err)
-//        await connection.rollback();
-//    }finally{
-//        connection.release() 
-//    }
-// // console.log('You will see this message every 15 minutes');
+      await connection.commit();
+   }catch(err){
+     //  console.log(err)
+       await connection.rollback();
+   }finally{
+       connection.release() 
+   }
+// console.log('You will see this message every 15 minutes');
 
-// })
-// // Auto start your payment
-// payment.start();
-
-
-// async function processArray(array) {
-//   for (const item of array) {
-//     await delayedLog(item);
-//   }
-//  return "done";
-// }
-
-//  //
-//  async function delayedLog(item) { 
-//   await delay();
- 
-//    let paymentId = item.id
-//    let status_initial = "attempted";
-//    let status_final = "PENDING";
-//    let cron_status_initial = "unattempted";
-//    let cron_status_final = "attempted";
-//    const headers = {
-//     'Content-Type': 'application/json',
-//     'Token':process.env.API_KEY
-//   }
+})
+// Auto start your payment
+payment1.start();
 
 
+async function processArray(array) {
+  console.log("gg")
+  for (const item of array) {
+
+    await delayedLog(item);
+   // console.log(item)
+  }
+ return "done";
+}
+
+ //
+ async function delayedLog(item) { 
+  await delay();
+console.log(item)
+  console.log("30 mins");
+    try{
+      
+      orderDate = item.orderDate;
+      console.log(orderDate)
+  var today = new Date();
+  var Difference_In_Time = today.getTime() - orderDate.getTime();
+console.log(Difference_In_Time)
+   diffInMinutes = millisToMinutesAndSeconds(Difference_In_Time)
+   console.log(diffInMinutes)
+if (diffInMinutes >= 30){
+     let link = item.orderLink;
+  getStatus= await axios.get( 'https://www.amazon.com/progress-tracker/package/ref=ppx_yo_dt_b_track_package?_encoding=UTF8&itemId=lilooqimtpkpwn&orderId=113-7405363-0300238&packageIndex=0&shipmentId=DsWK8pBzT&vt=YOUR_ORDERS' ) 
+  // console.log(getAddress.data)
+
+    
+              let re6 = /(Ordered\s\<\w+\s\w+\=\"\w+\"\>\w+\,\s\w+\s\d+)/g;     
+                  
+              let found6 =  getStatus.data.match(re6);
+              if(found6 === null){
+                status = "Cancelled"
+                const connection = await sql.getConnection()
+              await connection.beginTransaction()
+              try{ 
+                let exactCancellationTime =  new Date();
+             
+                const result = await connection.query('UPDATE wishlist SET status=?, exactCancellationTime=? where id =?', [  status, exactCancellationTime,  item.id])
+                 console.log(result)
+            
+                console.log("status changed succesful")
+               // console.log(pay.data.transactionId)
+                await connection.commit();
+                
+              }catch(err){
+               console.log(err)
+               console.log("wait")
+                await connection.rollback();
+              }finally{
+                connection.release()
+              }
+              }else{
+              console.log(found6);
+              wid = found6[0]
+              status = "Not shipped yet"
+              const connection = await sql.getConnection()
+              await connection.beginTransaction()
+              try{ 
+             
+                const result = await connection.query('UPDATE wishlist SET status=? where id =?', [  status, item.id])
+                 console.log(result)
+            
+                console.log("status changed succesful")
+               // console.log(pay.data.transactionId)
+                await connection.commit();
+                
+              }catch(err){
+               console.log(err)
+               console.log("wait")
+                await connection.rollback();
+              }finally{
+                connection.release()
+              }
+              }
+              
+     
+           //res.status(200).send(wid)
+          }
+  
 
 
 
-//     try{
-// https://www.amazon.com/progress-tracker/package/ref=oh_aui_hz_st_btn?_encoding=UTF8&itemId=0&orderId=114-0911325-3822665
- 
-   
-//       }
+
+      }
       
       
-//       catch(err){
-       
-//         await connection.rollback();
-//       }finally{
-//         connection.release()
-//       }
+      catch(err){
+        console.log(err)
+      
+      }
 
     
 
-// }
+}
+function millisToMinutesAndSeconds(millis) {
+  var minutes = Math.floor(millis / 60000);
+  
+  return minutes
+}
+
 
 // second cron
-var validatePayment = cron.schedule('* 10 * * *', async function() {
-   // console.log("i ran 3");
-    const connection = await sql.getConnection()
-    await connection.beginTransaction()
-    try{
-      let status = "Pending"
-      let status1 = "Attempted"
+// var validatePayment = cron.schedule('* * * * *', async function() {
+//     console.log("i ran 3");
+//     const connection = await sql.getConnection()
+//     await connection.beginTransaction()
+//     try{
+//       let status = "Not shipped yet"
+//       let status1 = "Shipped"
+//       let status2 = "Cancelled"
+//       let status3= "Delivered"
       
-      let status2 = "Waiting for confimation"
 
-        const processOrder = await connection.query('select * from wishlist where status!=? OR status1 !=? OR status2!=?', [status, status1, status2])
-      //  console.log(claims)
-        processArrayFinalPayment(processOrder[0])
-       await connection.commit();
-    }catch(err){
-       // console.log(err) 
-        await connection.rollback();
-    }finally{
-        connection.release() 
-    }
- // console.log('You will see this message every 15 minutes');
+//         const processOrder = await connection.query('select * from wishlist where status=? OR status =? OR status=? OR status=? ', [status, status1, status2, status3])
+//      console.log(processOrder[0].length)
+//         processArrayFinalPayment(processOrder[0])
+//        await connection.commit();
+//     }catch(err){
+//        // console.log(err) 
+//         await connection.rollback();
+//     }finally{
+//         connection.release() 
+//     }
+//  // console.log('You will see this message every 15 minutes');
 
-})
-validatePayment.start();
+// })
+//validatePayment.start();
  
  //  loop handler
  async function processArrayFinalPayment(array) {
+   //console.log(array)
   for (const item of array) {
     await delayedLogFinalPayment(item);
   }
@@ -478,20 +554,225 @@ validatePayment.start();
 
 async function delayedLogFinalPayment(item) {
   await delay();
-  const status = item.status
+
   try{
+    const status = item.status
+   var  today = new Date();
+    
+     
+   const Differenc2= today.getTime() -  new Date(item.exactDeliveryTime).getTime();
+   console.log(Differenc2)
+  //  new Date(item.exactDeliveryTime).getTime()
+
+   diffInHours2 = msToHours(Differenc2)
+   console.log(diffInHours2)
+const Difference_Time = today.getTime() - new Date(item.exactCancellationTime).getTime();
+console.log(Difference_Time)
+diffInHours = msToHours(Difference_Time)
+console.log(diffInHours)
+ 
+
+ 
+ 
+
+
+
+if (diffInHours >= 12 && status === "Cancelled"){
+  let status ="Pending"
+  console.log("bb")
+  let earnerId= ""
+  let amazonOrderId = " "
+  let bitshopyOrderId = " "
+  let deliveryDate = " "
+  let orderLink = " "
+  let orderDate = " "
+  let reason = " Amazon cancelled the offer"
+  const connection = await sql.getConnection();
+  await connection.beginTransaction();
+ try
+ {    
   
-      const headers = {
-      'Content-Type': 'application/json',
-      'Token':process.env.API_KEY 
-    }
-    let transactionId = item.transaction_id;
-    baseUrl= process.env.BASE_URL;
-    pay = await axios.get(`${baseUrl}/asteroid/webapi/3ptwebapp/transfer/transfers/status/${transactionId}`,  {headers: headers})
-     // console.log(pay)
+      const result = await connection.query('update wishlist SET status=?, earnerId=?, amazonOrder=?, bitshopyOrder=?, deliveryDate=?, orderLink=?, orderDate=?  where id=?  ', [status, earnerId, amazonOrderId,  bitshopyOrderId, deliveryDate, orderLink, orderDate, item.id])
+ 
+      const result1 = await connection.query('Delete from ordertable  where wishlistTableId=?  ', [item.id])
+      const result2 =  await connection.query('INSERT INTO earnercancelreason SET  reason=?, wishlistTableId=?, earnerId=?', [ reason, item.id, item.earnerId])
+         await connection.commit();
+                                                                                                
+           
+ }catch(err){
+      await connection.rollback();
+      console.log(err)
+      return err
+ }finally{
+     connection.release();
+ }
+
+
+
+} else if (diffInHours2 >= 24 && status === "Delivered"){
+  console.log("cc")
+  const userDetails2 = await sql.query('SELECT * from profile where id= ?', [item.earnerId])
+  console.log(userDetails2[0])
+  const totalPay = item.totalPay;
+  const initailBalanceBtc = userDetails2[0][0].walletBalanceBtc
+  //const initailBalanceUsd = await getConversionInUsd(initailBalanceBtc) 
+  const noOfTransactions = parseInt(userDetails2[0][0].noOfTransactions) + 1
+  let type = "Earned"
+  let status = "Success"
+  statusUp = "Completed"
+  let transactionDate = new Date()
+  // console.log(userDetails2[0][0].walletBalanceBtc)
+  // console.log(totalPay)
+ // console.log(userDetails2[0][0].noOfTransactions)
+  const totalPayBtc = await getConversionInBtc(totalPay)
+ // console.log(totalPayBtc) 
+  
+let finalBalanceBtc = parseFloat(initailBalanceBtc) + parseFloat(totalPayBtc)
+const finalBalanceUsd = await getConversionInUsd(finalBalanceBtc) 
+const connection = await sql.getConnection();
+  await connection.beginTransaction();
+ try
+ {    
+  
+      const result = await connection.query('update profile SET walletBalanceBtc=?, walletBalanceUsd=?, noOfTransactions=? where id =?',[finalBalanceBtc, finalBalanceUsd, noOfTransactions, item.earnerId])
+ 
+      const result1 = await connection.query('INSERT into transactions SET  amountUsd=?,  type=?, status=?, transactionDate=?, userId=?, wishlistTableId=?, amountBtc=?, initialBalance=?,finalBalance=? ', [totalPay, type, status, transactionDate, item.earnerId , item.id, totalPayBtc, initailBalanceBtc, finalBalanceBtc])
+     
+      const result2 = await connection.query('update wishlist SET status=? where id=?  ', [ statusUp ,  item.id])
+         await connection.commit();
+                                                                                            
+           console.log("kk")
+ }catch(err){
+      await connection.rollback();
+      console.log(err)
+      return err
+ }finally{
+     connection.release();
+ }
+
+
+
+}
+
+
+else{
+
+  let link = item.orderLink;
+  getStatus= await axios.get( 'https://www.amazon.com/progress-tracker/package/ref=ppx_yo_dt_b_track_package?_encoding=UTF8&itemId=lilooqimtpkpwn&orderId=113-7405363-0300238&packageIndex=0&shipmentId=DsWK8pBzT&vt=YOUR_ORDERS' ) 
+  let re = /(Delivered\s\<\w+\s\w+\=\"\w+\"\>\w+\s\d+)/g;
+
+  let found = getStatus.data.match(re);
+          if(found === null){
+              let re5= /(Shipped\s\<\w+\s\w+\=\"\w+\"\>\w+\,\s\w+\s\d+)/g;     
+              
+          let found5 =  getStatus.data.match(re5);
+         
+          if(found5 === null){
+              let re6 = /(Ordered\s\<\w+\s\w+\=\"\w+\"\>\w+\,\s\w+\s\d+)/g;     
+              
+          let found6 =  getStatus.data.match(re6);
+          if(found6 === null){
+            status = "Cancelled"
+            const connection = await sql.getConnection()
+          await connection.beginTransaction()
+          try{ 
+         
+            const result = await connection.query('UPDATE wishlist SET status=? where id =?', [  status, item.id])
+             console.log(result)
+        
+            console.log("status changed succesful")
+           // console.log(pay.data.transactionId)
+            await connection.commit();
+            return data
+          }catch(err){
+           console.log(err)
+           console.log("wait")
+            await connection.rollback();
+          }finally{
+            connection.release()
+          }
+          }else{
+          console.log(found6);
+          wid = found6[0]
+          status = "Not shipped yet"
+          const connection = await sql.getConnection()
+          await connection.beginTransaction()
+          try{ 
+         
+            const result = await connection.query('UPDATE wishlist SET status=? where id =?', [  status, item.id])
+             console.log(result)
+        
+            console.log("status changed succesful")
+           // console.log(pay.data.transactionId)
+            await connection.commit();
+            return data
+          }catch(err){
+           console.log(err)
+           console.log("wait")
+            await connection.rollback();
+          }finally{
+            connection.release()
+          }
+          }
+          } else{
+              console.log(found5);
+              wid = found5[0]
+              console.log(wid)
+              status = "Shipped"
+              const connection = await sql.getConnection();
+              await connection.beginTransaction();
+             try
+             {    
+              
+                  const result = await connection.query('update wishlist SET status=? where id=?  ', [status, item.id])
+             
+                 
+                     await connection.commit();
+                     return result[0]                                                                                           
+                       
+             }catch(err){
+                  await connection.rollback();
+                  console.log(err)
+                  return err
+             }finally{
+                 connection.release();
+             }
+          }
           
+      } else{
+          console.log(found);
+          wid = found[0]
+          console.log(wid)
+        let  status = "Delivered"
+          const connection = await sql.getConnection();
+          await connection.beginTransaction();
+         try
+         {    
+          
+              const result = await connection.query('update wishlist SET status=? where id=?  ', [status, item.id])
+         
+             
+                 await connection.commit();
+                 return result[0]                                                                                           
+                   
+         }catch(err){
+              await connection.rollback();
+              console.log(err)
+              return err
+         }finally{
+             connection.release();
+         }
+      }
+
+
+}
+
   
   }
+
+
+
+
   catch(err){
        console.log(err)
       return err
@@ -499,6 +780,11 @@ async function delayedLogFinalPayment(item) {
      
   
   
+}
+function msToHours(duration) {
+ let  hours = Math.floor((duration / (1000 * 60 * 60)) );
+
+  return hours 
 }
 
       

@@ -31,7 +31,7 @@ module.exports = app =>{
     app.get("/confirmdelivery/:offerId", verifyToken, item.shopperConfirmDelivery);
 
     // earner cancel offer after it has been accepted
-    app.get("/earnercanceloffer/:offerId", verifyToken, item.earnerCancelOffer);
+    app.post("/earnercanceloffer", verifyToken, item.earnerCancelOffer);
 
 
     app.get("/btcrate",  item.getBtcRate)
