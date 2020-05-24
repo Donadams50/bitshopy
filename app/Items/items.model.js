@@ -97,10 +97,11 @@ const Items = function(){
     try{ 
         let status = "Pending";
         let status2= "Accepted"
+        let status3 = "Completed"
         
 
 // const result = await sql.query('SELECT * , profile.username, profile.level FROM wishlist INNER JOIN profile ON wishlist.shopperId = profile.id where status=? AND discount>=? AND totalPay<=? AND shopperId!=?', [status, discount, orderSizeLimit,shopperId])
-const result = await sql.query('SELECT w.* , p.username, p.level FROM wishlist w, profile p where ((w.shopperId = p.id AND w.shopperId=?) OR (w.earnerId = p.id  AND w.earnerId=? AND w.status=? ) OR ( w.shopperId = p.id AND w.discount>=? AND w.totalPay<=?  AND w.status=?)) ', [userId, userId, status2, discount, orderSizeLimit,  status])
+const result = await sql.query('SELECT w.* , p.username, p.level FROM wishlist w, profile p where ((w.shopperId = p.id AND w.shopperId=? AND w.status!=?) OR (w.earnerId = p.id  AND w.earnerId=? AND w.status=? ) OR ( w.shopperId = p.id AND w.discount>=? AND w.totalPay<=?  AND w.status=?)) ', [userId,status3, userId, status2, discount, orderSizeLimit,  status])
 //const result = await sql.query('SELECT w.*, p.username, p.level FROM wishlist w, profile p where ((w.shopperId = p.id AND w.shopperId=?) OR ( w.earnerId = p.id AND w.earnerId=? AND w.status!=? AND w.status!=? ))  ', [userId, userId,  status, status2])      
 //  const result = await sql.query('SELECT * FROM wishlist where status=? AND discount>=? AND totalPay<=?', [status, discount, orderSizeLimit])
   console.log(result[0])
