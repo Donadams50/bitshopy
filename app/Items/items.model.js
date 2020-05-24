@@ -317,7 +317,7 @@ Items.confirmDelivery = async function(id){
   {    
     let status = "Completed"
    
-       const result = await connection.query('update wishlist SET status=?, where id=?  ', [ status ,  id])
+       const result = await connection.query('update wishlist SET status=? where id=?  ', [ status ,  id])
   
         
           await connection.commit();
