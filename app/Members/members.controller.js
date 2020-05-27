@@ -181,12 +181,14 @@ exports.signIn = async(req,res)=>{
                     console.log(isMatch)
                     if (isMatch){
                         const tokens = signToken(id, username, email, level) 
-                         const user = userDetails[0]
+                         let user = userDetails[0]
                          const getPriviledges1 = await Members.findLevelDetails(userDetails[0].level)
                          const walletbalanceusd = await getConversionInUsd(userDetails[0].walletBalanceBtc) 
                          console.log("walletbalanceusd")
                          console.log(walletbalanceusd)
                             user.walletBalanceUsd = walletbalanceusd;
+                            const allunread = await Items.getAllMessages(userDetails[0].id)
+                           let messageCount= allunread.length
                           const noOfOffer = await Items.findNumberOfOffer(userDetails[0].id)
                            let totalSaved = 0
                           for( var i = 0; i < noOfOffer.length; i++){
@@ -213,6 +215,7 @@ exports.signIn = async(req,res)=>{
                             user.makeTransactionAsEarners=true
                             user.priviledgesAsEarners=getPriviledges1[0]
                             user.totalSaved = totalSaved;
+                            user.messageCount = messageCount;
                             user.token = tokens
                             res.status(200).send(user)
 
@@ -225,6 +228,22 @@ exports.signIn = async(req,res)=>{
                             const getPriviledges = await Members.findLevelDetails(userDetails2[0].level)
                              tokens1 = signToken(id, username, email, level) 
                              user = userDetails2[0]
+                             if ( userDetails2[0].noOfTransactions > 5 || userDetails2[0].level === 0){
+                                user.makeOfferAsShopper=true
+                                user.maximumDiscountAsShopper= 100
+                                user.maximumOfferPrice= 999
+                                user.minimumOfferPrice= 3.99
+                              }else if( noOfOffer.length <= 10  ){
+                                user.makeOfferAsShopper=true
+                                user.maximumDiscountAsShopper= 10
+                                user.maximumOfferPrice= 999
+                                user.minimumOfferPrice= 3.99
+                              }
+                              else{
+                                user.makeOfferAsShoper=false
+                              }
+                          
+                             user.messageCount = messageCount;
                             user.priviledgesAsEarners=getPriviledges[0]
                             user.token = tokens1;
                             user.makeTransactionAsEarners=true;
@@ -431,6 +450,8 @@ exports.getUser = async(req,res)=>{
                          console.log("walletbalanceusd")
                          console.log(walletbalanceusd)
                             user.walletBalanceUsd = walletbalanceusd;
+                            const allunread = await Items.getAllMessages(userDetails[0].id)
+                           let messageCount= allunread.length
                           const noOfOffer = await Items.findNumberOfOffer(userDetails[0].id)
                            let totalSaved = 0
                           for( var i = 0; i < noOfOffer.length; i++){
@@ -457,7 +478,7 @@ exports.getUser = async(req,res)=>{
                             user.makeTransactionAsEarners=true
                             user.priviledgesAsEarners=getPriviledges1[0]
                             user.totalSaved = totalSaved;
-                            
+                            user.messageCount = messageCount;
                             res.status(200).send(user)
 
                           }else if( userDetails[0].noOfTransactions >= getPriviledges1[0].transactionLimit ){
@@ -469,8 +490,22 @@ exports.getUser = async(req,res)=>{
                             const getPriviledges = await Members.findLevelDetails(userDetails2[0].level)
                             
                              user = userDetails2[0]
+                             if ( userDetails2[0].noOfTransactions > 5 || userDetails2[0].level === 0){
+                                user.makeOfferAsShopper=true
+                                user.maximumDiscountAsShopper= 100
+                                user.maximumOfferPrice= 999
+                                user.minimumOfferPrice= 3.99
+                              }else if( noOfOffer.length <= 10  ){
+                                user.makeOfferAsShopper=true
+                                user.maximumDiscountAsShopper= 10
+                                user.maximumOfferPrice= 999
+                                user.minimumOfferPrice= 3.99
+                              }
+                              else{
+                                user.makeOfferAsShoper=false
+                              }
                             user.priviledgesAsEarners=getPriviledges[0]
-                           
+                            user.messageCount = messageCount;
                             user.makeTransactionAsEarners=true;
                             user.totalSaved = totalSaved;
                             res.status(200).send(user)
@@ -479,6 +514,38 @@ exports.getUser = async(req,res)=>{
         
     }
     catch(err){
+        console.log(err)
+        res.status(500).json({message:"An error occurred"})
+    }
+}
+
+
+// enable two factor
+exports.enableTwoFactor = async(req,res)=>{
+    let {type} = req.query
+    console.log(type)
+  
+    try{
+        const isMember = await Members.findUsername(req.user.username)
+  console.log(isMember)
+       
+        if (isMember.length>0 ){
+                     
+                    const updateTwoFactor = await Members.triggerTwoFactor( type, req.user.id)
+                                if (updateTwoFactor.affectedRows === 1){
+                                
+                                        res.status(200).send({message:"Two factor  changed succesfull"})
+                                            }else{
+                                                res.status(400).send({message:"An error occured"})
+                                            }   
+                                        
+       
+        }else{
+            res.status(400).send({message:"User name does not exists"})
+           
+        }
+        
+    }catch(err){
         console.log(err)
         res.status(500).json({message:"An error occurred"})
     }

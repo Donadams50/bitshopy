@@ -287,7 +287,47 @@ exports.getAllOffer = async(req, res) =>{
 
 // GET all offer qualified for by a single user
 exports.getAllOfferQualifiedFor= async(req, res) =>{
-  console.log(req.user)
+
+   let { type} = req.query;
+   console.log(type)
+  if (type === "unchecked"){
+    const allOffer = await Items.getAllOffer(req.user.id )
+    console.log(allOffer)
+    if (allOffer.length >= 0){
+        console.log(allOffer.length)
+        for( var i = 0; i < allOffer.length; i++){
+            let cors ="true"
+          let currency = "USD"
+        getBtcPrice = await axios.get('https://blockchain.info/tobtc?currency='+currency+'&value='+allOffer[i].totalPay+'&cors='+cors+'' )
+            allOffer[i].btcPrice = getBtcPrice.data
+            console.log(getBtcPrice.data)
+            if(req.user.level === 1 && (allOffer[i].discount < 30 || allOffer[i].totalPay >75)){
+                allOffer[i].levelUp = true
+           }else if(req.user.level === 2 && (allOffer[i].discount < 20 || allOffer[i].totalPay >150)){
+            allOffer[i].levelUp = true
+           }
+           else if(req.user.level === 3 && (allOffer[i].discount < 15 || allOffer[i].totalPay >300)){
+            allOffer[i].levelUp = true
+           }
+           else if(req.user.level === 4 && (allOffer[i].discount < 10 || allOffer[i].totalPay >500)){
+            allOffer[i].levelUp = true
+           }
+           else if(req.user.level === 5 && (allOffer[i].discount < 5 || allOffer[i].totalPay >999)){
+            allOffer[i].levelUp = true
+           }
+           
+
+          }
+
+        res.status(200).send(allOffer)
+    }
+    else{
+        
+        res.status(400).send({message:"error while getting offer"}) 
+    }
+}else if (type === "checked"){
+ 
+  
     try{
         if(req.user.level === 1){
              discount = 30;
@@ -297,7 +337,7 @@ exports.getAllOfferQualifiedFor= async(req, res) =>{
             orderSizeLimit = 150
         }
         else if(req.user.level === 3){
-            discount = 150;
+            discount = 15;
             orderSizeLimit = 300
         }
         else if(req.user.level === 4){
@@ -333,7 +373,7 @@ exports.getAllOfferQualifiedFor= async(req, res) =>{
                 
                 res.status(400).send({message:"error while getting offer"}) 
             }
-           
+          
            
           
         }
@@ -343,7 +383,7 @@ exports.getAllOfferQualifiedFor= async(req, res) =>{
         res.status(500).send({message:"issues while retrieving offers"})
         
     }
-  
+}
     
 }
 // get all item in a offer
@@ -351,10 +391,11 @@ exports.getAllItemsInOffer= async(req, res) =>{
   
     try{
         console.log(req.params.offerId)
-            const allOfferItem = await Items.getAllItemsInOffer(req.params.offerId)
-         //   console.log(allOfferItem)
+            const allOfferItem = await Items.getAllItemsInOffer(req.params.offerId, req.user.id)
+           console.log(allOfferItem)
          //   console.log(allOfferItem.offerItems.length)
             if (allOfferItem.offerItems.length > 0){
+                //const allmesages = await Items.getAllMessages(req.params.offerId)
                 let cors ="true"
                 let currency = "USD"
               getBtcPrice = await axios.get('https://blockchain.info/tobtc?currency='+currency+'&value='+allOfferItem.offer[0].totalPay+'&cors='+cors+'' )
@@ -475,21 +516,7 @@ async function PersistOneByOne2(wishlistItems, wishlistTableId, wishlistId ){
 
 
 // accept offer
-exports.acceptOfferTemp = async(req,res)=>{
-    if (!req.body){
-        res.status(400).send({message:"Content cannot be empty"});
-    }
-console.log(req.body)
-
-  // console.log( req.user )
-    //console.log(decoded)
-
-    
-
-    
-    
-       
-            
+exports.acceptOfferTemp = async(req,res)=>{    
             try{ 
                 const isUserHasPendingOffer = await Items.UserHasPendingOffer(req.user.id)
                 console.log(isUserHasPendingOffer)
@@ -508,7 +535,12 @@ console.log(req.body)
              const createorder = await Items.acceptOfferTemp( req.params.offerId, status, req.user.id)
           //   console.log(createorder.affectedRows)
              if (createorder.affectedRows === 1){
-                //const createorder = await Items.sendMessage( req.params.offerId, test, req.user.id)
+
+                const getwishlistbyid = await Items.findWishlistById( req.params.offerId)
+                console.log(getwishlistbyid[0].shopperId)
+
+                 let text =  ''+req.user.username+' accepted offer'
+                const sendmessage = await Items.sendMessage( req.params.offerId, text, req.user.id, status, getwishlistbyid[0].shopperId)
                 res.status(200).send( {message:"Temporary Offer Accepted succesfully"})
                                
              }else{
@@ -543,10 +575,15 @@ exports.cancelOfferTemp = async(req,res)=>{
             
              let   status = "Pending"
              let   earnerId = " "
-            
+        
           
-             const createorder = await Items.acceptOfferTemp( req.params.offerId, status, earnerId)
+             const createorder = await Items.acceptOfferTemp( req.params.offerId, status, earnerId, status)
              if (createorder.affectedRows === 1){
+                 const deletemessage = await Items.deleteMessage( req.params.offerId)
+                // console.log(getwishlistbyid.shopperId)
+                // let text =  ''+req.user.username+' cancel offer'
+                // const sendmessage = await Items.sendMessage( req.params.offerId, text, req.user.id)
+                
                 res.status(200).send( {message:"Temporary Offer cancelled succesfully"})
                                
              }else{
@@ -597,6 +634,11 @@ exports.acceptOffer = async(req,res)=>{
              const createorder = await Items.acceptOffer(amazonOrderId, shopperId, earnerId, wishlistTableId,  bitshopyOrderId,  status, deliveryDate,wishlistId, orderLink, orderDate)
                   
              if (createorder.insertId > 0){
+                const getwishlistbyid = await Items.findWishlistById( wishlistTableId)
+                console.log(getwishlistbyid.shopperId)
+                 
+                let text =  ''+req.user.username+' submitted order #'+amazonOrderId+'  delivery date  '+deliveryDate+' and Order link  '+orderLink+' '
+                const sendmessage = await Items.sendMessage( wishlistTableId, text, req.user.id, status, getwishlistbyid[0].shopperId)
                 res.status(201).send( {message:"Offer Accepted succesfully"})
                                
              }else{
@@ -624,21 +666,26 @@ exports.getOrder = async(req, res) =>{
   
     try{
         let { type} = req.query;
-        console.log(req.query)
+        console.log(type)
+        console.log(req.user.id)
         if (!type){
             res.status(400).send({message:"a type of active or previous must be sent"}) 
         }else{
       
             const allOrder = await Items.getOrder(req.user.id, type )
+            console.log(allOrder)
             if (allOrder.length > 0){
+               
               //  console.log(allOrder[0])
                 for( var i = 0; i < allOrder.length; i++){
-                    const imgurl = await Items.getImageUrl(allOrder[i].id )
+                 const allunread = await Items.getUnread(allOrder[i].id, req.user.id)
+                 console.log(allunread)
+                 allOrder[i].messageCount = allunread.length; 
+                  const imgurl = await Items.getImageUrl(allOrder[i].id )
                     console.log(imgurl[0])
                     allOrder[i].imgUrl  = imgurl
                    let savedFeePercent = (parseFloat(allOrder[i].savedFee) /parseFloat(allOrder[i].originalTotalPrice) * 100)
-                   allOrder[i].savedFeePercent = savedFeePercent
-                    
+                   allOrder[i].savedFeePercent = savedFeePercent                  
                   }
                   console.log(allOrder)
                 res.status(200).send(allOrder)
@@ -683,6 +730,9 @@ exports.shopperCancelOffer = async(req,res)=>{
     if (userDetails2.length>0){
 
         const offerbyid = await Items.findPendingWishlistById(req.params.offerId)
+        if(offerbyid[0].status != "Pending"){
+            res.status(400).send({message:"You can not cancel this offer again, it has been accepted"})
+        } else{
         const totalPay = offerbyid[0].totalPay;
         const initailBalanceBtc = userDetails2[0].walletBalanceBtc
         const initailBalanceUsd = await getConversionInUsd(initailBalanceBtc) 
@@ -708,6 +758,7 @@ exports.shopperCancelOffer = async(req,res)=>{
         }else{
             res.status(400).send({message:"Not succesfull "})
         }
+    }
     } 
     else{
         res.status(400).send({message:"User not found"})
@@ -735,6 +786,10 @@ exports.shopperConfirmDelivery = async(req,res)=>{
 
     
     const offerbyid = await Items.findAcceptedWishlistById(req.params.offerId)
+     if(offerbyid[0].status === "Cancelled")
+     {
+        res.status(400).send({message:"This order has been cancelled, you can not confirm delivery"})
+    }else{
     const userDetails2 = await Members.findDetailsById(offerbyid[0].earnerId)
     if (userDetails2.length>0){
 
@@ -761,7 +816,9 @@ exports.shopperConfirmDelivery = async(req,res)=>{
       if(updatewallet.affectedRows > 0){
         const createtransaction =await Payments.createTransactionSpend(totalPay, type, status, transactionDate, offerbyid[0].earnerId , offerbyid[0].id, totalPayBtc, initailBalanceBtc, finalBalanceBtc)
       const confirmdelivery =await Items.confirmDelivery(req.params.offerId)
-      
+       let text =  ''+req.user.username+'  has confirmed delivery, and the earner wallet has been creditted'
+       let status1 = "Completed"
+    const sendmessage = await Items.sendMessage( req.params.offerId, text, req.user.id, status1, offerbyid[0].earnerId)
       res.status(200).send({message:"Confirm delevery succesfull "})
 
         }else{
@@ -773,7 +830,7 @@ exports.shopperConfirmDelivery = async(req,res)=>{
     }
 
    }
-      
+}
     }catch(err){
         console.log(err)
         res.status(500).send({message:"Error while accepting offer temporarily "})
@@ -806,12 +863,13 @@ console.log(req.body)
        let deliveryDate = " "
        let orderLink = " "
        let orderDate = " "
-
-
+        let status1 = "Cancelled"
         const cancelorder = await Items.earnerCancelOffer(status, earnerId, amazonOrderId,  bitshopyOrderId, deliveryDate, orderLink, orderDate, offerId,reason, req.user.id)
        if (cancelorder.affectedRows> 0)
          {
-          
+             const deletemessage = await Items.deleteMessage( offerId)
+            // let text =  ''+req.user.username+' canceled the order, reason: '+reason+' '
+            // const sendmessage = await Items.sendMessage( req.params.offerId, text, req.user.id, status1)
         res.status(200).send({message:"Cancel offer succesfull "})
 
       }
@@ -827,7 +885,94 @@ console.log(req.body)
     }
 }
 
+// GET all unread message
+exports.getUnread = async(req, res) =>{
+  
+    try{
+        console.log(req.params.offerId)
+            const allunread = await Items.getAllMessages(req.user.id)
+          
+              console.log(allunread.length)
+                res.status(200).send({messageCount:allunread.length })
+           
+          
+        }
+       
+    catch(err){
+     console.log(err)
+        res.status(500).send({message:"issues while getting unread messages"})
+        
+    }
+  
+    
+}
 
+// mark Read
+exports.markRead = async(req, res) =>{
+  
+    try{
+        console.log(req.params.wishlistTableId)
+            const markread = await Items.markRead(req.params.wishlistTableId, req.user.id)
+          
+              console.log(markread)
+                res.status(200).send({message:"Succesfully mark as read"})
+           
+          
+        }
+       
+    catch(err){
+     console.log(err)
+        res.status(500).send({message:"issues while getting unread messages"})
+        
+    }
+  
+    
+}
+// send message
+
+exports.sendMessage = async(req,res)=>{
+    if (!req.body){
+        res.status(400).send({message:"Content cannot be empty"});
+    }
+        console.log(req.body)
+
+    const { text, senderId, receiverId, wishlistTableId, status} = req.body;
+
+    
+    if (text && senderId && receiverId && wishlistTableId && status ){
+        if ( text==="" ||senderId  ==="" || receiverId==="" || wishlistTableId ==="" || status===""){
+            res.status(400).send({
+                message:"Incorrect entry format"
+            });
+        }else{
+            
+            try{ 
+                    
+                const sendmessage = await Items.sendMessageChat( wishlistTableId, text, senderId, status, receiverId)
+                  
+             if (sendmessage.insertId > 0){
+                
+                res.status(201).send( {message:"message sent succesfully"})
+                               
+             }else{
+                res.status(400).send({
+                    message:" Message not sent"
+                });
+             }            
+               
+            }catch(err){
+                console.log(err)
+                res.status(500).send({message:"Error while sending message "})
+            }
+        }
+    }else{
+        res.status(400).send({
+            message:"Incorrect entry format"
+        });
+    }
+
+
+}
 
 // GET all order
 exports.getBtcRate = async(req, res) =>{

@@ -33,6 +33,11 @@ module.exports = app =>{
     // earner cancel offer after it has been accepted
     app.post("/earnercanceloffer", verifyToken, item.earnerCancelOffer);
 
+    app.get("/getallunread", verifyToken, item.getUnread);
+
+    app.get("/markread/:wishlistTableId", verifyToken, item.markRead);
+
+    app.post("/notification", verifyToken, item.sendMessage);
 
     app.get("/btcrate",  item.getBtcRate)
     

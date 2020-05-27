@@ -210,6 +210,20 @@ Members.updateLevel= async function(id, newLevel){
         return (err)
     }
 }
+// update two factor
+
+Members.triggerTwoFactor= async function(type, id){
+    try{
+        const result = await sql.query('update profile set twofactor=? where id=?',[type, id])
+        const data=result[0]
+        console.log('-------------------------------------------------------CHECKING IF USERNAME EXISTS---------------')
+        return data
+    }catch(err){
+        console.log(err)
+        console.log('--------------------------------------------err--------------------------------------------------------')
+        return (err)
+    }
+}
 
 //update wallet
 Members.updateWallet= async function(finalBalanceBtc, finalBalanceUsd, noOfTransactions, shopperId){

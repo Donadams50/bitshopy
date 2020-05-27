@@ -21,7 +21,9 @@ module.exports = app =>{
 
     app.post("/changepassword", verifyToken,  member.changePassword); 
 
-    app.get("/user/:id", verifyToken,  member.getUser); 
+    app.get("/user/:id", verifyToken,  member.getUser);
+
+    app.post("/enabletwofactor", verifyToken,  member.enableTwoFactor); 
     // Sign In member
   //  app.post("/user_auth", member.signIn); 
 
