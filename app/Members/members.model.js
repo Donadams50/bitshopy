@@ -13,6 +13,8 @@ const Members = function(members){
     this.walletBalanceBtc= members.walletBalanceBtc
     this.noOfRatings = members.noOfRatings
     this.noOfTransactions= members.noOfTransactions
+    this.totalRatings = members.totalRatings
+    this.twoFactor= members.twoFactor
  
     // this.id=members.id
     // this.gender=members.gender
@@ -84,7 +86,7 @@ Members.create = async function(newMember){
     try
     {
         console.log(newMember)
-         const result = await connection.query('INSERT into profile SET username=?, level=?, code=?, ratings=?, isVerified=?, walletBalanceUsd=?, walletBalanceBtc=?, noOfRatings=?, email=?, noOfTransactions=?', [newMember.username, newMember.level, newMember.code, newMember.ratings, newMember.isVerified, newMember.walletBalanceUsd, newMember.walletBalanceBtc, newMember.noOfRatings, newMember.email, newMember.noOfTransactions])
+         const result = await connection.query('INSERT into profile SET username=?, level=?, code=?, ratings=?, isVerified=?, walletBalanceUsd=?, walletBalanceBtc=?, noOfRatings=?, email=?, noOfTransactions=?, totalRatings=?, twoFactor=?', [newMember.username, newMember.level, newMember.code, newMember.ratings, newMember.isVerified, newMember.walletBalanceUsd, newMember.walletBalanceBtc, newMember.noOfRatings, newMember.email, newMember.noOfTransactions, newMember.totalRatings, newMember.twoFactor])
          if (result[0].insertId){
              await connection.query('INSERT INTO member_authentication_table SET email=?, password=?', [newMember.email, newMember.password])
              console.log('---------------------------------Credentials filled------------------------------------------------------------------------------------------------------')
@@ -211,10 +213,29 @@ Members.updateLevel= async function(id, newLevel){
     }
 }
 // update two factor
-
 Members.triggerTwoFactor= async function(type, id){
+
+    if(type === "true"){
+      twoFa = true
+    }else{
+      twoFa = false
+    }
     try{
-        const result = await sql.query('update profile set twofactor=? where id=?',[type, id])
+        const result = await sql.query('update profile set twofactor=? where id=?',[twoFa, id])
+        const data=result[0]
+        console.log('-------------------------------------------------------CHECKING IF USERNAME EXISTS---------------')
+        return data
+    }catch(err){
+        console.log(err)
+        console.log('--------------------------------------------err--------------------------------------------------------')
+        return (err)
+    }
+}
+
+// rate a member
+Members.Rate= async function(ratings, noOfRatings, totalRatings, receiverId){
+    try{
+        const result = await sql.query('update profile set ratings=?, noOfRatings=?, totalRatings=? where id=?',[ratings, noOfRatings,totalRatings, receiverId])
         const data=result[0]
         console.log('-------------------------------------------------------CHECKING IF USERNAME EXISTS---------------')
         return data

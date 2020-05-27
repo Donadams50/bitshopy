@@ -39,7 +39,9 @@ console.log(req.body)
                 walletBalanceUsd:0.0,
                 walletBalanceBtc: 0.0,
                 level: 1,
-                noOfTransactions:0
+                noOfTransactions:0,
+                totalRatings:0,
+                twoFactor: false
 
             });
             try{
@@ -526,7 +528,7 @@ exports.enableTwoFactor = async(req,res)=>{
     console.log(type)
   
     try{
-        const isMember = await Members.findUsername(req.user.username)
+        const isMember = await Members.findDetailsById(req.user.id)
   console.log(isMember)
        
         if (isMember.length>0 ){
@@ -541,7 +543,7 @@ exports.enableTwoFactor = async(req,res)=>{
                                         
        
         }else{
-            res.status(400).send({message:"User name does not exists"})
+            res.status(400).send({message:"User  does not exists"})
            
         }
         
@@ -550,3 +552,37 @@ exports.enableTwoFactor = async(req,res)=>{
         res.status(500).json({message:"An error occurred"})
     }
 }
+
+// enable two factor
+exports.Rate = async(req,res)=>{
+    let {receiverId, rating} = req.body
+    console.log(type)
+  
+    try{
+        const isMember = await Members.findDetailsById(receiverId)
+  console.log(isMember)
+       
+        if (isMember.length>0 ){
+                     totalRatings = parseInt(isMember[0].totalRatings) + rating ;
+                     noOfRatings = parseInt(isMember[0].noOfRatings) + 1;
+                     ratings = parseFloat(totalRatings)/ parseFlaot(noOfRatings);
+                    const updateRate = await Members.Rate( ratings, noOfRatings, totalRatings, receiverId)
+                                if (updateRate.affectedRows === 1){
+                                
+                                        res.status(200).send({message:"Rated succesfully"})
+                                            }else{
+                                                res.status(400).send({message:"An error occured"})
+                                            }   
+                                        
+       
+        }else{
+            res.status(400).send({message:"User does not exists"})
+           
+        }
+        
+    }catch(err){
+        console.log(err)
+        res.status(500).json({message:"An error occurred"})
+    }
+}
+
