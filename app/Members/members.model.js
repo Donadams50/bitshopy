@@ -221,7 +221,7 @@ Members.triggerTwoFactor= async function(type, id){
       twoFa = false
     }
     try{
-        const result = await sql.query('update profile set twofactor=? where id=?',[twoFa, id])
+        const result = await sql.query('update profile set twoFactor=? where id=?',[twoFa, id])
         const data=result[0]
         console.log('-------------------------------------------------------CHECKING IF USERNAME EXISTS---------------')
         return data
@@ -250,6 +250,20 @@ Members.Rate= async function(ratings, noOfRatings, totalRatings, receiverId){
 Members.updateWallet= async function(finalBalanceBtc, finalBalanceUsd, noOfTransactions, shopperId){
     try{
         const result = await sql.query('update profile SET walletBalanceBtc=?, walletBalanceUsd=?, noOfTransactions=? where id =?',[finalBalanceBtc, finalBalanceUsd, noOfTransactions, shopperId])
+        const data=result[0]
+        console.log('-------------------------------------------------------CHECKING IF USERNAME EXISTS---------------')
+        return data
+    }catch(err){
+        console.log(err)
+        console.log('--------------------------------------------err--------------------------------------------------------')
+        return (err)
+    }
+}
+// update two factor code
+
+Members.updateTwoFactor= async function( userId, code){
+    try{
+        const result = await sql.query('update profile SET twoFactorCode=? where id =?',[ code, userId])
         const data=result[0]
         console.log('-------------------------------------------------------CHECKING IF USERNAME EXISTS---------------')
         return data
@@ -305,6 +319,21 @@ Members.saveForgetPasswordCode= async function(email, code){
 Members.findForgotPasswordCode= async function(code, email){
     try{
         const result = await sql.query('SELECT * from profile where forgotPasswordCode =? AND email=?', [code, email])
+        const data=result[0]
+      //  console.log(data)
+        console.log('-------------------------------------------------------CHECKING IF USERNAME EXISTS details---------------')
+        return data
+    }catch(err){
+        console.log(err)
+        console.log('--------------------------------------------err--------------------------------------------------------')
+        return (err)
+    }
+}
+
+
+Members.checkCode= async function(userId, code){
+    try{
+        const result = await sql.query('SELECT * from profile where twoFactorCode =? AND id=?', [code, userId])
         const data=result[0]
       //  console.log(data)
         console.log('-------------------------------------------------------CHECKING IF USERNAME EXISTS details---------------')

@@ -25,7 +25,9 @@ module.exports = app =>{
 
     app.post("/twofactorauth", verifyToken,  member.enableTwoFactor); 
 
-    app.post("/rate", verifyToken,  member.Rate); 
+    app.post("/rate", verifyToken,  member.Rate);
+
+   app.post("/twofactorcode", verifyToken,  member.validateTwoFactor); 
     // Sign In member
   //  app.post("/user_auth", member.signIn); 
 

@@ -321,13 +321,13 @@ const result = await sql.query('SELECT w.* , p.username, p.level FROM wishlist w
  }
 
  // accept offer temporarily
- Items.acceptOfferTemp = async function(  wishlistTableId , status, earnerId){
+ Items.acceptOfferTemp = async function(  wishlistTableId , status, earnerId, exactAcceptTime){
     const connection = await sql.getConnection();
      await connection.beginTransaction();
     try
     {    
      
-         const result = await connection.query('update wishlist SET status=?, earnerId=? where id=?  ', [ status , earnerId,  wishlistTableId])
+         const result = await connection.query('update wishlist SET status=?, earnerId=?, exactAcceptTime=? where id=?  ', [ status , earnerId, exactAcceptTime,  wishlistTableId])
     
           
             await connection.commit();
@@ -521,7 +521,8 @@ var payment1 = cron.schedule('*\10 * * * *', async function() {
    await connection.beginTransaction()
    try{
      let status = "Waiting for confirmation"
-       const unprocessOrder = await connection.query('select * from wishlist where status =?', [status])
+     let status1 = "Accepted"
+       const unprocessOrder = await connection.query('select * from wishlist where status =? OR status=?', [status, status1])
   //    console.log(unprocessOrder[0])
       console.log("ff")
        init = await processArray(unprocessOrder[0]);
@@ -561,9 +562,50 @@ async function processArray(array) {
  async function delayedLog(item) { 
   await delay();
 console.log(item)
-  console.log("30 mins");
+  console.log("waiting and accepted");
     try{
-      
+      if(item.status === "Accepted"){
+        console.log("i enter accepted")
+        exactAcceptTime = item.exactAcceptTime;
+      //  console.log(orderDate)
+    var today = new Date();
+    var Difference_In_Time = today.getTime() - exactAcceptTime.getTime();
+  console.log(Difference_In_Time)
+     diffInMinutes = millisToMinutesAndSeconds(Difference_In_Time)
+     console.log(diffInMinutes)
+  if (diffInMinutes > 33){
+                status = "Pending"
+                exactAcceptTime= ""
+                earnerId = ""
+                const connection = await sql.getConnection()
+                await connection.beginTransaction()
+                try{ 
+               
+                  const result = await connection.query('update wishlist SET status=?, earnerId=?, exactAcceptTime=? where id=?  ', [ status , earnerId, exactAcceptTime,  item.id])
+                   console.log(result)
+        
+               
+     
+              
+                  console.log("status changed succesful")
+                 // console.log(pay.data.transactionId)
+                  await connection.commit();
+                  
+                }catch(err){
+                 console.log(err)
+                 console.log("wait")
+                  await connection.rollback();
+                }finally{
+                  connection.release()
+                }
+                
+                
+       
+             //res.status(200).send(wid)
+            }
+      }
+
+      else{
       orderDate = item.orderDate;
       console.log(orderDate)
   var today = new Date();
@@ -571,13 +613,11 @@ console.log(item)
 console.log(Difference_In_Time)
    diffInMinutes = millisToMinutesAndSeconds(Difference_In_Time)
    console.log(diffInMinutes)
-if (diffInMinutes >= 40){
+if (diffInMinutes >= 30){
      let link = item.orderLink;
      console.log(link)
      getStatus= await axios.get( ''+link+'' ) 
-  // console.log(getAddress.data)
-
-    
+//console.log( getStatus.data)
               let re6 = /(Ordered\s\<\w+\s\w+\=\"\w+\"\>\w+\,\s\w+\s\d+)/g;     
                   
               let found6 =  getStatus.data.match(re6);
@@ -639,7 +679,7 @@ if (diffInMinutes >= 40){
            //res.status(200).send(wid)
           }
   
-
+        }
 
 
 
@@ -705,7 +745,7 @@ async function delayedLogFinalPayment(item) {
   try{
     const status = item.status
    var  today = new Date();
-    
+  
      if(status === "Delivered"){
    const Differenc2= today.getTime() -  new Date(item.exactDeliveryTime).getTime();
    console.log(Differenc2)

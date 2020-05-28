@@ -159,6 +159,34 @@ async function processEmail(emailFrom, emailTo, subject, text, text2 ){
 
 }
 
+async function processEmail2(emailFrom, emailTo, subject, text, text2 ){
+    try{
+        //create org details
+        // await delay();
+       const sendmail =  await sendemail.emaiforgotPassword(emailFrom, emailTo, subject, text, text2);
+     //  console.log(sendmail)
+        return sendmail
+    }catch(err){
+        console.log(err)
+        return err
+    }
+
+}
+
+async function processEmail3(emailFrom, emailTo, subject, text ){
+    try{
+        //create org details
+        // await delay();
+       const sendmail =  await sendemail.twoFactorAuth(emailFrom, emailTo, subject, text);
+     //  console.log(sendmail)
+        return sendmail
+    }catch(err){
+        console.log(err)
+        return err
+    }
+
+}
+
 // User signIn
 exports.signIn = async(req,res)=>{
     console.log(req.body)
@@ -180,7 +208,7 @@ exports.signIn = async(req,res)=>{
                     const userDetails = await Members.findDetailsByEmail(req.body.email.toLowerCase())
                     const {id , username,  email, level}= userDetails[0]
                     const isMatch = await passwordUtils.comparePassword(password.toLowerCase(), retrievedPassword);
-                    console.log(isMatch)
+                 //   console.log(isMatch)
                     if (isMatch){
                         const tokens = signToken(id, username, email, level) 
                          let user = userDetails[0]
@@ -198,7 +226,87 @@ exports.signIn = async(req,res)=>{
                             totalSaved = parseFloat(totalSaved)+ parseFloat(noOfOffer[i].savedFee)
                             console.log(totalSaved)
                           }
-                          console.log(noOfOffer)
+                          console.log("ok")
+                          console.log(userDetails[0].twoFactor)
+                          if(userDetails[0].twoFactor === 1){
+                            const code = getCode()
+                            console.log("uu")
+                            console.log(code);
+           const emailFrom = 'Bitshopy   <noreply@astrapay.com.com>';
+           const subject = 'Two factor auth code';                      
+           const emailTo = userDetails[0].email.toLowerCase();
+         
+           
+          processEmail3(emailFrom, emailTo, subject, code);
+           const updateTwoFactor = await Members.updateTwoFactor(userDetails[0].id, code)
+    //          console.log(sentemail)
+    //    if(sentemail === true){
+    //  //   const updateTwoFactor = await Members.updateTwoFactor(userDetails[0].id, code)
+    // //    console.log(noOfOffer)
+    //     if ( userDetails[0].noOfTransactions > 5 || userDetails[0].level === 0){
+    //       user.makeOfferAsShopper=true
+    //       user.maximumDiscountAsShopper= 100
+    //       user.maximumOfferPrice= 999
+    //       user.minimumOfferPrice= 3.99
+    //     }else if( noOfOffer.length <= 10  ){
+    //       user.makeOfferAsShopper=true
+    //       user.maximumDiscountAsShopper= 10
+    //       user.maximumOfferPrice= 999
+    //       user.minimumOfferPrice= 3.99
+    //     }
+    //     else{
+    //       user.makeOfferAsShoper=false
+    //     }
+    //     if ( userDetails[0].noOfTransactions < getPriviledges1[0].transactionLimit ||userDetails[0].level  === 0 || userDetails[0].level=== 5 ){
+    //       user.makeTransactionAsEarners=true
+    //       user.priviledgesAsEarners=getPriviledges1[0]
+    //       user.totalSaved = totalSaved;
+    //       user.messageCount = messageCount;
+    //       user.token = tokens
+          
+    //       res.status(200).send(user)
+
+    //     }else if( userDetails[0].noOfTransactions >= getPriviledges1[0].transactionLimit ){
+    //        // console.log(userDetails[0].level)
+    //         const newLevel = parseInt(userDetails[0].level) + 1
+    //       const updatelevel = await Members.updateLevel(userDetails[0].id, newLevel)
+    //       const userDetails2 = await Members.findDetailsByEmail(req.body.email.toLowerCase())
+    //      const   {id , username,  email, level}= userDetails2[0]
+    //       const getPriviledges = await Members.findLevelDetails(userDetails2[0].level)
+    //        tokens1 = signToken(id, username, email, level) 
+    //        user = userDetails2[0]
+    //        if ( userDetails2[0].noOfTransactions > 5 || userDetails2[0].level === 0){
+    //           user.makeOfferAsShopper=true
+    //           user.maximumDiscountAsShopper= 100
+    //           user.maximumOfferPrice= 999
+    //           user.minimumOfferPrice= 3.99
+    //         }else if( noOfOffer.length <= 10  ){
+    //           user.makeOfferAsShopper=true
+    //           user.maximumDiscountAsShopper= 10
+    //           user.maximumOfferPrice= 999
+    //           user.minimumOfferPrice= 3.99
+    //         }
+    //         else{
+    //           user.makeOfferAsShoper=false
+    //         }
+        
+    //        user.messageCount = messageCount;
+    //       user.priviledgesAsEarners=getPriviledges[0]
+    //       user.token = tokens1;
+    //       user.makeTransactionAsEarners=true;
+    //       user.totalSaved = totalSaved;
+    //       res.status(200).send(user)
+    //     }
+        
+          
+    //    }
+    //  else{
+    //     res.status(404).send({message:"Two factor code not sent. Please try to login again."})
+    //  }
+          
+                          }
+                           
+                       //   console.log(noOfOffer)
                           if ( userDetails[0].noOfTransactions > 5 || userDetails[0].level === 0){
                             user.makeOfferAsShopper=true
                             user.maximumDiscountAsShopper= 100
@@ -219,10 +327,11 @@ exports.signIn = async(req,res)=>{
                             user.totalSaved = totalSaved;
                             user.messageCount = messageCount;
                             user.token = tokens
+                            
                             res.status(200).send(user)
 
                           }else if( userDetails[0].noOfTransactions >= getPriviledges1[0].transactionLimit ){
-                              console.log(userDetails[0].level)
+                              //console.log(userDetails[0].level)
                               const newLevel = parseInt(userDetails[0].level) + 1
                             const updatelevel = await Members.updateLevel(userDetails[0].id, newLevel)
                             const userDetails2 = await Members.findDetailsByEmail(req.body.email.toLowerCase())
@@ -252,7 +361,7 @@ exports.signIn = async(req,res)=>{
                             user.totalSaved = totalSaved;
                             res.status(200).send(user)
                           }
-
+                      
                        
                     }else{
                         res.status(400).json({message:"Incorrect Login Details"})
@@ -294,7 +403,7 @@ exports.forgotPassword = async(req,res)=>{
            const emailTo = req.body.email.toLowerCase();
            const link = `${hostUrl}/setnewpassword?email=${emailTo}&username=${to}&code=${code}`;
            const link2 = `${hostUrl2}/setnewpassword?email=${emailTo}&username=${to}&code=${code}`;
-           sentemail =  await  processEmail(emailFrom, emailTo, subject, link, link2);
+           sentemail =  await  processEmail2(emailFrom, emailTo, subject, link, link2);
              console.log(sentemail)
        if(sentemail === true){
         const saveForgetPasswordCode = await Members.saveForgetPasswordCode(email.toLowerCase() , code)
@@ -556,7 +665,7 @@ exports.enableTwoFactor = async(req,res)=>{
 // enable two factor
 exports.Rate = async(req,res)=>{
     let {receiverId, rating} = req.body
-    console.log(type)
+   console.log(req.body)
   
     try{
         const isMember = await Members.findDetailsById(receiverId)
@@ -565,7 +674,7 @@ exports.Rate = async(req,res)=>{
         if (isMember.length>0 ){
                      totalRatings = parseInt(isMember[0].totalRatings) + rating ;
                      noOfRatings = parseInt(isMember[0].noOfRatings) + 1;
-                     ratings = parseFloat(totalRatings)/ parseFlaot(noOfRatings);
+                     ratings = parseInt(totalRatings)/ parseInt(noOfRatings);
                     const updateRate = await Members.Rate( ratings, noOfRatings, totalRatings, receiverId)
                                 if (updateRate.affectedRows === 1){
                                 
@@ -586,3 +695,62 @@ exports.Rate = async(req,res)=>{
     }
 }
 
+
+// enable two factor
+exports.validateTwoFactor = async(req,res)=>{
+    let {code} = req.body
+    console.log(code)
+  
+    try{
+        const isMember = await Members.findDetailsById(req.user.id)
+  console.log(isMember)
+       
+        if (isMember.length>0 ){
+                     
+                    const isCodeValid = await Members.checkCode( req.user.id, code)
+                                if ( isCodeValid.length > 0){
+                                
+                                        res.status(200).send({message:"Two factor auth code valid"})
+                                            }else{
+                                                res.status(400).send({message:"Two factor auth code not valid"})
+                                            }   
+                                        
+       
+        }else{
+            res.status(400).send({message:"User does not exists"})
+           
+        }
+        
+    }catch(err){
+        console.log(err)
+        res.status(500).json({message:"An error occurred"})
+    }
+}
+
+
+function getCode(){
+    var numbers = "0123456789";
+
+    var chars= "abcdefghijklmnopqrstuvwxyz";
+  
+    var code_length = 6;
+    var number_count = 3;
+    var letter_count = 3;
+  
+    var code = '';
+  
+    for(var i=0; i < code_length; i++) {
+       var letterOrNumber = Math.floor(Math.random() * 2);
+       if((letterOrNumber == 0 || number_count == 0) && letter_count > 0) {
+          letter_count--;
+          var rnum = Math.floor(Math.random() * chars.length);
+          code += chars[rnum];
+       }
+       else {
+          number_count--;
+          var rnum2 = Math.floor(Math.random() * numbers.length);
+          code += numbers[rnum2];
+       }
+    }
+return code
+}

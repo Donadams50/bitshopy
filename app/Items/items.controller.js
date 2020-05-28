@@ -529,10 +529,10 @@ exports.acceptOfferTemp = async(req,res)=>{
              let   status = "Accepted";
              console.log(req.user.id)
              console.log(req.params.offerId)
-             
+             let exactAcceptTime =  new Date();
             
           
-             const createorder = await Items.acceptOfferTemp( req.params.offerId, status, req.user.id)
+             const createorder = await Items.acceptOfferTemp( req.params.offerId, status, req.user.id, exactAcceptTime)
           //   console.log(createorder.affectedRows)
              if (createorder.affectedRows === 1){
 
@@ -575,10 +575,15 @@ exports.cancelOfferTemp = async(req,res)=>{
             
              let   status = "Pending"
              let   earnerId = " "
-        
+            let exactAcceptTime =" "
           
-             const createorder = await Items.acceptOfferTemp( req.params.offerId, status, earnerId, status)
+             const createorder = await Items.acceptOfferTemp( req.params.offerId, status, earnerId, exactAcceptTime)
              if (createorder.affectedRows === 1){
+           //     const getwishlistbyid = await Items.findWishlistById( req.params.offerId)
+
+            
+                console.log(getwishlistbyid[0].shopperId)
+
                  const deletemessage = await Items.deleteMessage( req.params.offerId)
                 // console.log(getwishlistbyid.shopperId)
                 // let text =  ''+req.user.username+' cancel offer'
@@ -609,9 +614,9 @@ exports.acceptOffer = async(req,res)=>{
         res.status(400).send({message:"Content cannot be empty"});
     }
         console.log(req.body)
-
+       
     const { amazonOrderId, shopperId, earnerId, wishlistTableId, deliveryDate, wishlistId, orderLink} = req.body;
-
+    console.log(wishlistTableId)
     
     if (amazonOrderId &&shopperId && earnerId && wishlistTableId && deliveryDate && wishlistId && orderLink ){
         if ( amazonOrderId==="" ||shopperId  ==="" || earnerId==="" || wishlistTableId ==="" || deliveryDate===""|| wishlistId==="" || orderLink ===""){
@@ -621,20 +626,34 @@ exports.acceptOffer = async(req,res)=>{
         }else{
             
             try{ 
+                const getwishlistbyid = await Items.findWishlistById( wishlistTableId)
+              //  console.log(getwishlistbyid[0].status)
+                if(getwishlistbyid[0].status === "Pending"){
+                    res.status(400).send({message:"Your time has elasped"})
+                }
+                else{
                 const isUserHasPendingOffer = await Items.UserHasPendingOffer(req.user.id)
-                console.log(isUserHasPendingOffer.length)
-                if (isUserHasPendingOffer.length<0){
+               // console.log(isUserHasPendingOffer.length)
+                if (isUserHasPendingOffer.length === 0){
                     res.status(400).send({message:"User does not have any offer to confirm"})
                 }
            else{
-        
+            const getwishlistbyid = await Items.findWishlistById( wishlistTableId)
+            var today = new Date();
+  var Difference_In_Time = today.getTime() - getwishlistbyid[0].exactAcceptTime.getTime();
+//console.log(Difference_In_Time)
+   diffInMinutes = millisToMinutesAndSeconds(Difference_In_Time)
+   //console.log(diffInMinutes)
+if (diffInMinutes > 30 || getwishlistbyid[0].status !="Accepted" ){
+    res.status(400).send({message:"Your time has elapsed"})
+}else{
              let   bitshopyOrderId = uuid.v4();
              let   status = "Waiting for confirmation"
              let   orderDate = new Date();
              const createorder = await Items.acceptOffer(amazonOrderId, shopperId, earnerId, wishlistTableId,  bitshopyOrderId,  status, deliveryDate,wishlistId, orderLink, orderDate)
                   
              if (createorder.insertId > 0){
-                const getwishlistbyid = await Items.findWishlistById( wishlistTableId)
+             
                 console.log(getwishlistbyid.shopperId)
                  
                 let text =  ''+req.user.username+' submitted order #'+amazonOrderId+'  delivery date  '+deliveryDate+' and Order link  '+orderLink+' '
@@ -645,8 +664,11 @@ exports.acceptOffer = async(req,res)=>{
                 res.status(400).send({
                     message:" Accept Offer not succesfully"
                 });
-             }            
-           }      
+             } 
+            }           
+           } 
+
+        }
             }catch(err){
                 console.log(err)
                 res.status(500).send({message:"Error while accepting offer "})
@@ -991,3 +1013,11 @@ exports.getBtcRate = async(req, res) =>{
   
     
 }
+
+
+// function to convert milli seconds to minutes
+function millisToMinutesAndSeconds(millis) {
+    var minutes = Math.floor(millis / 60000);
+    
+    return minutes
+  }
