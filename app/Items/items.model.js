@@ -704,7 +704,7 @@ function millisToMinutesAndSeconds(millis) {
 
 
 // second cron
-var validatePayment = cron.schedule('30 23 * * *', async function() {
+var validatePayment = cron.schedule('50 10 * * *', async function() {
     console.log("i ran 3");
     const connection = await sql.getConnection()
     await connection.beginTransaction()
@@ -743,15 +743,15 @@ async function delayedLogFinalPayment(item) {
   await delay();
 
   try{
-    const status = item.status
+  //  const status = item.status
    var  today = new Date();
   
-     if(status === "Delivered"){
+     if(item.status === "Delivered"){
    const Differenc2= today.getTime() -  new Date(item.exactDeliveryTime).getTime();
    console.log(Differenc2)
    diffInHours2 = msToHours(Differenc2)
    console.log(diffInHours2)
-   if (diffInHours2 >= 24 && status === "Delivered"){
+   if (diffInHours2 >= 24 && item.status === "Delivered"){
     console.log("cc")
     const userDetails2 = await sql.query('SELECT * from profile where id= ?', [item.earnerId])
     console.log(userDetails2[0][0])
@@ -802,13 +802,13 @@ async function delayedLogFinalPayment(item) {
   
   }
   }
-  else if(status === "Cancelled"){
+  else if(item.status === "Cancelled"){
   
 const Difference_Time = today.getTime() - new Date(item.exactCancellationTime).getTime();
 console.log(Difference_Time)
 diffInHours = msToHours(Difference_Time)
 console.log(diffInHours)
-if (diffInHours >= 12 && status === "Cancelled"){
+if (diffInHours >= 12 && item.status === "Cancelled"){
   let status ="Pending"
   console.log("bb")
   let earnerId= ""
@@ -905,7 +905,7 @@ if (diffInHours >= 12 && status === "Cancelled"){
             console.log("status changed succesful to not shipped yet")
            // console.log(pay.data.transactionId)
             await connection.commit();
-            return data
+         //   return data
           }catch(err){
            console.log(err)
            console.log("wait")
@@ -933,7 +933,7 @@ if (diffInHours >= 12 && status === "Cancelled"){
                  const result2 = await connection.query('INSERT into messages SET wishlistTableId=?, text=?, status =?, isRead=?, messageTo=?', [ item.id, text, status, isRead, item.earnerId])
                 }
                      await connection.commit();
-                     return result[0]                                                                                           
+                    // return result[0]                                                                                           
                        
              }catch(err){
                   await connection.rollback();
