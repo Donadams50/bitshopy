@@ -60,7 +60,7 @@ console.log(req.body)
                 const upperCaseWords = wishlistUrl.match(/(\b[A-Z0-9][A-Z0-9]+|\b[A-Z]\b)/g);
                    //     console.log(upperCaseWords[0])
                         wid = upperCaseWords[0]
-                
+                console.log(wid)
                 // let re4 = /\w{13}/g;       
                 // let found4 = wishlistUrl.match(re4);
                 // if(found4 === null){
@@ -89,7 +89,8 @@ console.log(req.body)
                let format ="json"
                let status = "unpurchased"
            get_wishlist = await axios.get('http://www.justinscarpetti.com/projects/amazon-wish-lister/api/?id='+wid+'&format='+format+'&reveal='+status+'' )
-             console.log(get_wishlist.data)
+             
+           console.log(get_wishlist.data)
              if (get_wishlist.data === null){
                 res.status(400).send({message:"Invalid wishlist url"})
              }else{
@@ -194,6 +195,7 @@ console.log(req.body)
                       console.log(userDetails2[0].walletBalanceBtc)
                       console.log(userDetails2[0].walletBalanceBtc)
                       console.log(userDetails2[0].noOfTransactions)
+                      console.log(userDetails2[0].escrowWalletBtc)
                       let type = "Spent"
                       let status = "Success"
                       let transactionDate = new Date();
@@ -201,11 +203,13 @@ console.log(req.body)
                       let currency = "USD"
                       const initailBalanceBtc = userDetails2[0].walletBalanceBtc
                       const initailBalanceUsd = userDetails2[0].walletBalanceUsd
+                      const initialescrowWalletUsd = userDetails2[0].escrowWalletUsd
                       const noOfTransactions = parseInt(userDetails2[0].noOfTransactions) + 1
                       const getBtcPrice = await axios.get('https://blockchain.info/tobtc?currency='+currency+'&value='+totalPay+'&cors='+cors+'' )
                         amountBtc = getBtcPrice.data
                         console.log(getBtcPrice.data)
                         let finalBalanceBtc = parseFloat(initailBalanceBtc) - parseFloat(amountBtc)
+                        let  finalEscrowWalletUsd = parseFloat(initialescrowWalletUsd) + parseFloat(totalPay)
                         getUsdInBitcoin = await axios.get('https://blockchain.info/ticker')  
                         console.log(getUsdInBitcoin.data.USD.last)
                           let finalBalanceUsd = parseFloat(getUsdInBitcoin.data.USD.last) * parseFloat(finalBalanceBtc) 
@@ -213,7 +217,7 @@ console.log(req.body)
 
 
                     const createtransaction =await Payments.createTransactionSpend(totalPay, type, status, transactionDate, shopperId , createoffer.insertId, amountBtc, initailBalanceBtc, finalBalanceBtc)
-                    const updatewallet = await Members.updateWallet(finalBalanceBtc, finalBalanceUsd, noOfTransactions, shopperId) 
+                    const updatewallet = await Members.updateWalletEscrow(finalBalanceBtc, finalBalanceUsd, noOfTransactions, shopperId, finalEscrowWalletUsd) 
                 }else{
                     console.log("user not found")
                 }
@@ -758,18 +762,20 @@ exports.shopperCancelOffer = async(req,res)=>{
         const totalPay = offerbyid[0].totalPay;
         const initailBalanceBtc = userDetails2[0].walletBalanceBtc
         const initailBalanceUsd = await getConversionInUsd(initailBalanceBtc) 
+        const initialescrowWalletUsd = userDetails2[0].escrowWalletUsd
         const noOfTransactions = parseInt(userDetails2[0].noOfTransactions) - 1
-        console.log(initailBalanceUsd)
-        console.log(userDetails2[0].walletBalanceBtc)
-        console.log(totalPay)
-        console.log(userDetails2[0].noOfTransactions)
+        // console.log(initailBalanceUsd)
+        // console.log(userDetails2[0].walletBalanceBtc)
+        // console.log(totalPay)
+      //  console.log(userDetails2[0].noOfTransactions)
         const totalPayBtc = await getConversionInBtc(totalPay)
-        console.log(totalPayBtc) 
-        
+        console.log(totalPayBtc)
+     console.log(userDetails2[0].escrowWalletBtc) 
+        let  finalEscrowWalletUsd = parseFloat(initialescrowWalletUsd) - parseFloat(totalPay)
     let finalBalanceBtc = parseFloat(initailBalanceBtc) + parseFloat(totalPayBtc)
     const finalBalanceUsd = await getConversionInUsd(finalBalanceBtc) 
       
-      const updatewallet = await Members.updateWallet(finalBalanceBtc, finalBalanceUsd, noOfTransactions, req.user.id) 
+      const updatewallet = await Members.updateWalletEscrow(finalBalanceBtc, finalBalanceUsd, noOfTransactions, req.user.id, finalEscrowWalletUsd) 
       if(updatewallet.affectedRows > 0){
       const deleteoffer =await Items.deleteOffer(req.params.offerId)
          if(deleteoffer){

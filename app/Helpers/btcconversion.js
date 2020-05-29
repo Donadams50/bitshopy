@@ -8,7 +8,7 @@ exports.getConversionInBtc= async function(valueUsd) {
     let currency = "USD"
   getBtcPrice = await axios.get('https://blockchain.info/tobtc?currency='+currency+'&value='+valueUsd+'&cors='+cors+'' )
      
-      console.log(getBtcPrice.data)
+    //  console.log(getBtcPrice.data)
     
     return getBtcPrice.data;
   }
@@ -17,7 +17,7 @@ exports.getConversionInBtc= async function(valueUsd) {
     getUsdInBitcoin = await axios.get('https://blockchain.info/ticker')  
     console.log(getUsdInBitcoin.data.USD)
     let amountUsd = parseFloat(getUsdInBitcoin.data.USD.last) * parseFloat(valueBtc) 
-    console.log("amountUsd")
-    console.log(amountUsd)
+   // console.log("amountUsd")
+   // console.log(amountUsd)
     return amountUsd;
   }

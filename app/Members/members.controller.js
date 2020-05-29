@@ -41,7 +41,8 @@ console.log(req.body)
                 level: 1,
                 noOfTransactions:0,
                 totalRatings:0,
-                twoFactor: false
+                twoFactor: false,
+                escrowWalletUsd: 0.0
 
             });
             try{
@@ -213,10 +214,12 @@ exports.signIn = async(req,res)=>{
                         const tokens = signToken(id, username, email, level) 
                          let user = userDetails[0]
                          const getPriviledges1 = await Members.findLevelDetails(userDetails[0].level)
-                         const walletbalanceusd = await getConversionInUsd(userDetails[0].walletBalanceBtc) 
-                         console.log("walletbalanceusd")
-                         console.log(walletbalanceusd)
+                         const walletbalanceusd = await getConversionInUsd(userDetails[0].walletBalanceBtc)
+                         const escrowWalletbtc = await getConversionInBtc(userDetails[0].escrowWalletUsd)  
+                         console.log("ESCROWUSD")
+                         console.log(escrowWalletbtc)
                             user.walletBalanceUsd = walletbalanceusd;
+                            user.escrowWalletBtc = escrowWalletbtc;
                             const allunread = await Items.getAllMessages(userDetails[0].id)
                            let messageCount= allunread.length
                           const noOfOffer = await Items.findNumberOfOffer(userDetails[0].id)
@@ -558,9 +561,13 @@ exports.getUser = async(req,res)=>{
             const user = userDetails[0]
                          const getPriviledges1 = await Members.findLevelDetails(userDetails[0].level)
                          const walletbalanceusd = await getConversionInUsd(userDetails[0].walletBalanceBtc) 
-                         console.log("walletbalanceusd")
-                         console.log(walletbalanceusd)
+                       //  console.log("walletbalanceusd")
+                        // console.log(walletbalanceusd)
                             user.walletBalanceUsd = walletbalanceusd;
+                            const escrowWalletbtc = await getConversionInBtc(userDetails[0].escrowWalletUsd)  
+                         //   console.log("ESCROWUSD")
+                          //  console.log(escrowWalletbtc)
+                               user.escrowWalletBtc = escrowWalletbtc;
                             const allunread = await Items.getAllMessages(userDetails[0].id)
                            let messageCount= allunread.length
                           const noOfOffer = await Items.findNumberOfOffer(userDetails[0].id)
@@ -568,7 +575,7 @@ exports.getUser = async(req,res)=>{
                           for( var i = 0; i < noOfOffer.length; i++){
                               
                             totalSaved = parseFloat(totalSaved)+ parseFloat(noOfOffer[i].savedFee)
-                            console.log(totalSaved)
+                           // console.log(totalSaved)
                           }
                           console.log(noOfOffer)
                           if ( userDetails[0].noOfTransactions > 5 || userDetails[0].level === 0){

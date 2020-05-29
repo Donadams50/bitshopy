@@ -15,7 +15,8 @@ const Members = function(members){
     this.noOfTransactions= members.noOfTransactions
     this.totalRatings = members.totalRatings
     this.twoFactor= members.twoFactor
- 
+    this.escrowWalletUsd= memebers.escrowWalletUsd
+
     // this.id=members.id
     // this.gender=members.gender
     // this.department=members.department
@@ -86,7 +87,7 @@ Members.create = async function(newMember){
     try
     {
         console.log(newMember)
-         const result = await connection.query('INSERT into profile SET username=?, level=?, code=?, ratings=?, isVerified=?, walletBalanceUsd=?, walletBalanceBtc=?, noOfRatings=?, email=?, noOfTransactions=?, totalRatings=?, twoFactor=?', [newMember.username, newMember.level, newMember.code, newMember.ratings, newMember.isVerified, newMember.walletBalanceUsd, newMember.walletBalanceBtc, newMember.noOfRatings, newMember.email, newMember.noOfTransactions, newMember.totalRatings, newMember.twoFactor])
+         const result = await connection.query('INSERT into profile SET username=?, level=?, code=?, ratings=?, isVerified=?, walletBalanceUsd=?, walletBalanceBtc=?, noOfRatings=?, email=?, noOfTransactions=?, totalRatings=?, twoFactor=?, escrowWalletUsd=?', [newMember.username, newMember.level, newMember.code, newMember.ratings, newMember.isVerified, newMember.walletBalanceUsd, newMember.walletBalanceBtc, newMember.noOfRatings, newMember.email, newMember.noOfTransactions, newMember.totalRatings, newMember.twoFactor, newMembers.escrowWalletUsd])
          if (result[0].insertId){
              await connection.query('INSERT INTO member_authentication_table SET email=?, password=?', [newMember.email, newMember.password])
              console.log('---------------------------------Credentials filled------------------------------------------------------------------------------------------------------')
@@ -249,7 +250,21 @@ Members.Rate= async function(ratings, noOfRatings, totalRatings, receiverId){
 //update wallet
 Members.updateWallet= async function(finalBalanceBtc, finalBalanceUsd, noOfTransactions, shopperId){
     try{
-        const result = await sql.query('update profile SET walletBalanceBtc=?, walletBalanceUsd=?, noOfTransactions=? where id =?',[finalBalanceBtc, finalBalanceUsd, noOfTransactions, shopperId])
+        const result = await sql.query('update profile SET walletBalanceBtc=?, walletBalanceUsd=?, noOfTransactions=? where id =?',[finalBalanceBtc, finalBalanceUsd, noOfTransactions,  shopperId])
+        const data=result[0]
+        console.log('-------------------------------------------------------CHECKING IF USERNAME EXISTS---------------')
+        return data
+    }catch(err){
+        console.log(err)
+        console.log('--------------------------------------------err--------------------------------------------------------')
+        return (err)
+    }
+}
+
+//update wallet with escrow
+Members.updateWalletEscrow= async function(finalBalanceBtc, finalBalanceUsd, noOfTransactions, shopperId, finalEscrowWalletUsd){
+    try{
+        const result = await sql.query('update profile SET walletBalanceBtc=?, walletBalanceUsd=?, noOfTransactions=?, escrowWalletUsd=? where id =?',[finalBalanceBtc, finalBalanceUsd, noOfTransactions, finalEscrowWalletUsd, shopperId])
         const data=result[0]
         console.log('-------------------------------------------------------CHECKING IF USERNAME EXISTS---------------')
         return data
