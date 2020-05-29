@@ -704,7 +704,7 @@ function millisToMinutesAndSeconds(millis) {
 
 
 // second cron
-var validatePayment = cron.schedule('50 10 * * *', async function() {
+var validatePayment = cron.schedule('55 10 * * *', async function() {
     console.log("i ran 3");
     const connection = await sql.getConnection()
     await connection.beginTransaction()
