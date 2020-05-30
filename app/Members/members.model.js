@@ -15,7 +15,7 @@ const Members = function(members){
     this.noOfTransactions= members.noOfTransactions
     this.totalRatings = members.totalRatings
     this.twoFactor= members.twoFactor
-    this.escrowWalletUsd= memebers.escrowWalletUsd
+    this.escrowWalletUsd= members.escrowWalletUsd
 
     // this.id=members.id
     // this.gender=members.gender
