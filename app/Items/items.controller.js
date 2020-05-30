@@ -6,6 +6,7 @@ const AmazonListScraper = require('amazon-list-scraper').default;
 const btcconversion = require('../Helpers/btcconversion')
 const { getConversionInBtc } = btcconversion;
 const { getConversionInUsd } = btcconversion;
+const sendemail = require('../Helpers/emailhelper.js');
 const axios = require('axios');
 const jsdom = require("jsdom");
 const { JSDOM } = jsdom;
@@ -30,6 +31,21 @@ const logger = winston.createLogger({
 function delay() {
     return new Promise(resolve => setTimeout(resolve, 300));
   }
+
+  // process email
+async function processEmail(emailFrom, emailTo, subject, text, shopperUsername, earnerUsername, cancellationReason ){
+    try{
+        //create org details
+        // await delay();
+       const sendmail =  await sendemail.notifyuser(emailFrom, emailTo, subject, text, shopperUsername, earnerUsername, cancellationReason);
+     //  console.log(sendmail)
+        return sendmail
+    }catch(err){
+        console.log(err)
+        return err
+    }
+
+}
 
 
 //  const passwordUtils =require('../Helpers/passwordUtils');
@@ -873,7 +889,7 @@ exports.earnerCancelOffer = async(req,res)=>{
     if (!req.body){
         res.status(400).send({message:"Content cannot be empty"});
     }
-console.log(req.body)
+//console.log(req.body)
            
     const {  offerId, reason} = req.body;
     
@@ -884,6 +900,18 @@ console.log(req.body)
             res.status(400).send({message:"user does not have any offer to cancel"})
         }
    else{
+
+    const getearner = await Items.getEarner(offerId, req.user.id)
+    const userDetails = await Members.findDetailsById(getearner[0].shopperId)
+    const emailFrom = 'Bitshopy   <noreply@bitshopy.com>';
+    const subject = 'Offer Cancelled';                      
+    const emailTo = userDetails[0].email.toLowerCase();
+    const shopperUsername = userDetails[0].username
+    const earnerUsername = getearner[0].username
+    const cancellationReason = reason
+    const text = "boring-snyder-80af72.netlify.app/#/earncrypto" 
+   processEmail(emailFrom, emailTo, subject, text, shopperUsername, earnerUsername, cancellationReason);
+
        let status ="Pending"
        let earnerId= ""
        let amazonOrderId = " "
@@ -892,6 +920,8 @@ console.log(req.body)
        let orderLink = " "
        let orderDate = " "
         let status1 = "Cancelled"
+        let exactCancellationTime = " "
+        let exactAcceptTime =" "
         const cancelorder = await Items.earnerCancelOffer(status, earnerId, amazonOrderId,  bitshopyOrderId, deliveryDate, orderLink, orderDate, offerId,reason, req.user.id)
        if (cancelorder.affectedRows> 0)
          {

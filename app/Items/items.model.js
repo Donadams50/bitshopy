@@ -1,5 +1,6 @@
 const sql=require("../Database/db");
 const cron = require('node-cron');
+const sendemail = require('../Helpers/emailhelper.js');
 const axios = require('axios');
 const dotenv = require('dotenv');
 dotenv.config();
@@ -14,6 +15,20 @@ function delay() {
 const Items = function(){
     
 }
+ // process email
+ async function processEmail(emailFrom, emailTo, subject, text, shopperUsername, earnerUsername, cancellationReason ){
+  try{
+    
+     const sendmail =  await sendemail.notifyuser(emailFrom, emailTo, subject, text, shopperUsername, earnerUsername, cancellationReason);
+   //  console.log(sendmail)
+      return sendmail
+  }catch(err){
+      console.log(err)
+      return err
+  }
+
+}
+
 
     // create wishlist
     Items.createOffer = async function(wishlistId, noOfItems, shopperId, discount, originalTotalPrice, totalPay, bitshopyFee, savedFee, taxPaid, onlyPrime, shippingFee, taxFee, wishlistUrl){
@@ -163,7 +178,20 @@ const Items = function(){
         return (err)
     }
   }
+// get earner details
 
+Items.getEarner= async function(offerId, earnerId){
+  try{
+   
+  //    const result = await sql.query('SELECT * FROM wishlist where status=? ', [status])
+      const result = await sql.query('SELECT w.* , p.username FROM wishlist w, profile p where w.earnerId = p.id  AND w.id=? AND w.earnerId=? ', [offerId, earnerId])
+      const data= result[0]
+      return data
+  }catch(err){
+    console.log(err)
+      return (err)
+  }
+}
 // get all offer qualified for by a user
 
   Items.getAllOfferQualifiedFor= async function(discount, orderSizeLimit, userId){
@@ -561,7 +589,7 @@ async function processArray(array) {
  //
  async function delayedLog(item) { 
   await delay();
-console.log(item)
+//console.log(item)
   console.log("waiting and accepted");
     try{
       if(item.status === "Accepted"){
@@ -704,7 +732,7 @@ function millisToMinutesAndSeconds(millis) {
 
 
 // second cron
-var validatePayment = cron.schedule('10 10 * * *', async function() {
+var validatePayment = cron.schedule('30 20 * * *', async function() {
     console.log("i ran 3");
     const connection = await sql.getConnection()
     await connection.beginTransaction()
@@ -809,6 +837,21 @@ console.log(Difference_Time)
 diffInHours = msToHours(Difference_Time)
 console.log(diffInHours)
 if (diffInHours >= 12 && item.status === "Cancelled"){
+  const emailFrom = 'Bitshopy   <noreply@bitshopy.com>';
+    const subject = 'Offer Cancelled';                      
+    const earn = await sql.query('SELECT w.* , p.username, p.email FROM wishlist w, profile p where w.earnerId = p.id  AND w.id=? AND w.earnerId=? ', [item.id, item.earnerId])
+    const shop = await sql.query('SELECT * from profile where id= ?', [item.shopperId])
+    console.log(earn[0][0])
+    console.log(shop[0][0].email)
+    const shopperUsername = shop[0][0].username
+    const earnerUsername = earn[0][0].username
+    console.log(shopperUsername)
+    console.log(earnerUsername)
+    const emailTo = shop[0][0].email.toLowerCase();
+    const cancellationReason = "The system detected that amazon cancelled the order"
+    const text = "boring-snyder-80af72.netlify.app/#/earncrypto" 
+   processEmail(emailFrom, emailTo, subject, text, shopperUsername, earnerUsername, cancellationReason);
+   processEmail(emailFrom, earn[0][0].email, subject, text, shopperUsername, earnerUsername, cancellationReason);
   let status ="Pending"
   console.log("bb")
   let earnerId= ""

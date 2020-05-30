@@ -397,7 +397,7 @@ exports.forgotPassword = async(req,res)=>{
             //newpassword = await passwordUtils.hashPassword(randomstring.toLowerCase());
            // const updatePassword = await Members.updatePassword(username, newpassword)
            const code = uuid.v4()
-           const emailFrom = 'Bitshopy   <noreply@astrapay.com.com>';
+           const emailFrom = 'Bitshopy   <noreply@bitshopy.com>';
            const subject = 'Forgot password';                      
          // const hostUrl = " 192.168.43.70:8080"
         const hostUrl2 = "http://boring-snyder-80af72.netlify.app/#" 
