@@ -87,7 +87,7 @@ Members.create = async function(newMember){
     try
     {
         console.log(newMember)
-         const result = await connection.query('INSERT into profile SET username=?, level=?, code=?, ratings=?, isVerified=?, walletBalanceUsd=?, walletBalanceBtc=?, noOfRatings=?, email=?, noOfTransactions=?, totalRatings=?, twoFactor=?, escrowWalletUsd=?', [newMember.username, newMember.level, newMember.code, newMember.ratings, newMember.isVerified, newMember.walletBalanceUsd, newMember.walletBalanceBtc, newMember.noOfRatings, newMember.email, newMember.noOfTransactions, newMember.totalRatings, newMember.twoFactor, newMembers.escrowWalletUsd])
+         const result = await connection.query('INSERT into profile SET username=?, level=?, code=?, ratings=?, isVerified=?, walletBalanceUsd=?, walletBalanceBtc=?, noOfRatings=?, email=?, noOfTransactions=?, totalRatings=?, twoFactor=?, escrowWalletUsd=?', [newMember.username, newMember.level, newMember.code, newMember.ratings, newMember.isVerified, newMember.walletBalanceUsd, newMember.walletBalanceBtc, newMember.noOfRatings, newMember.email, newMember.noOfTransactions, newMember.totalRatings, newMember.twoFactor, newMember.escrowWalletUsd])
          if (result[0].insertId){
              await connection.query('INSERT INTO member_authentication_table SET email=?, password=?', [newMember.email, newMember.password])
              console.log('---------------------------------Credentials filled------------------------------------------------------------------------------------------------------')
