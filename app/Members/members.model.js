@@ -274,6 +274,23 @@ Members.updateWalletEscrow= async function(finalBalanceBtc, finalBalanceUsd, noO
         return (err)
     }
 }
+
+
+// update shopper escrow
+
+Members.updateShopperEscrow= async function(finalEscrowWalletUsd, userId){
+    try{
+        const result = await sql.query('update profile SET  escrowWalletUsd=? where id =?',[finalEscrowWalletUsd, userId])
+        const data=result[0]
+        console.log('-------------------------------------------------------CHECKING IF USERNAME EXISTS---------------')
+        return data
+    }catch(err){
+        console.log(err)
+        console.log('--------------------------------------------err--------------------------------------------------------')
+        return (err)
+    }
+}
+
 // update two factor code
 
 Members.updateTwoFactor= async function( userId, code){

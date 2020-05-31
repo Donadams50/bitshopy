@@ -103,10 +103,10 @@ exports.postPayment = async(req,res)=>{
 console.log(req.body)
 
    
-    const { amountBtc, senderAddress, receiverAddress } = req.body;
+    const { receiverAddress } = req.body;
    // var userId = decoded.id;
-    if (amountBtc && senderAddress && receiverAddress ){
-        if (amountBtc==="" || senderAddress===""  || receiverAddress==="" ){
+    if (receiverAddress ){
+        if ( receiverAddress==="" ){
             res.status(400).send({
                 message:"Incorrect entry format"
             });
@@ -118,7 +118,7 @@ console.log(req.body)
                      let transactionDate = new Date();
                      let noOfCheck = 0;
 
-                     const createtransaction =await Payments.createTransaction(amountBtc, type, status,transactionDate, senderAddress , receiverAddress, noOfCheck, req.user.id)
+                     const createtransaction =await Payments.createTransaction( type, status,transactionDate,  receiverAddress, noOfCheck, req.user.id)
                      res.status(200).send({message:"Details gotten. make your payment to the address given to you now "})
     
                     

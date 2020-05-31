@@ -17,14 +17,14 @@ function delay() {
 }
 
 // create transaction
-Payments.createTransaction = async function( amountBtc, type, status,transactionDate, senderAddress , receiverAddress, noOfCheck, userId){
+Payments.createTransaction = async function(  type, status,transactionDate,  receiverAddress, noOfCheck, userId){
     const connection = await sql.getConnection();
      await connection.beginTransaction();
     try
     {
         let status = "Pending"
        
-         const result = await connection.query('INSERT into transactions SET amountBtc=?, type=?, status=?, transactionDate=?, senderAddress=?, receiverAddress=?, noOfCheck=?, userId=?', [ amountBtc,  type, status,transactionDate, senderAddress , receiverAddress, noOfCheck, userId])
+         const result = await connection.query('INSERT into transactions SET  type=?, status=?, transactionDate=?,  receiverAddress=?, noOfCheck=?, userId=?', [   type, status,transactionDate,  receiverAddress, noOfCheck, userId])
        
                                                                                                                        
              await connection.commit();
@@ -258,7 +258,7 @@ Payments.createTransactionWithdrawer = async function(amountBtc, amountUsd, type
        
        if(getBalance.data.status === "success"){
        let noOfCheck = parseInt(item.noOfCheck) + 1;
-         if( item.receiverAddress ===  getBalance.data.data.balances[0].address  && item.amountBtc === parseFloat(getBalance.data.data.balances[0].pending_received_balance) )
+         if( item.receiverAddress ===  getBalance.data.data.balances[0].address  && getBalance.data.data.balances[0].pending_received_balance > 0 )
          { 
            console.log("yess")
            getUsdInBitcoin = await axios.get('https://blockchain.info/ticker')  

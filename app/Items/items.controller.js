@@ -211,7 +211,7 @@ console.log(req.body)
                       console.log(userDetails2[0].walletBalanceBtc)
                       console.log(userDetails2[0].walletBalanceBtc)
                       console.log(userDetails2[0].noOfTransactions)
-                      console.log(userDetails2[0].escrowWalletBtc)
+                //      console.log(userDetails2[0].escrowWalletBtc)
                       let type = "Spent"
                       let status = "Success"
                       let transactionDate = new Date();
@@ -602,7 +602,7 @@ exports.cancelOfferTemp = async(req,res)=>{
            //     const getwishlistbyid = await Items.findWishlistById( req.params.offerId)
 
             
-                console.log(getwishlistbyid[0].shopperId)
+              //  console.log(getwishlistbyid[0].shopperId)
 
                  const deletemessage = await Items.deleteMessage( req.params.offerId)
                 // console.log(getwishlistbyid.shopperId)
@@ -836,25 +836,21 @@ exports.shopperConfirmDelivery = async(req,res)=>{
     }else{
     const userDetails2 = await Members.findDetailsById(offerbyid[0].earnerId)
     if (userDetails2.length>0){
-
         
         const totalPay = offerbyid[0].totalPay;
-        const initailBalanceBtc = userDetails2[0].walletBalanceBtc
+        const initailBalanceBtc = userDetails2[0].walletBalanceBtc    
         const initailBalanceUsd = await getConversionInUsd(initailBalanceBtc) 
         const noOfTransactions = parseInt(userDetails2[0].noOfTransactions) + 1
         let type = "Earned"
         let status = "Success"
         let transactionDate = new Date();
-        console.log(initailBalanceUsd)
-        console.log(userDetails2[0].walletBalanceBtc)
-        console.log(totalPay)
-        console.log(userDetails2[0].noOfTransactions)
         const totalPayBtc = await getConversionInBtc(totalPay)
-        console.log(totalPayBtc) 
-        
     let finalBalanceBtc = parseFloat(initailBalanceBtc) + parseFloat(totalPayBtc)
     const finalBalanceUsd = await getConversionInUsd(finalBalanceBtc) 
-      
+    const userDetails3 = await Members.findDetailsById(req.user.id)
+       const initialescrowWalletUsd = userDetails3[0].escrowWalletUsd
+       let  finalEscrowWalletUsd = parseFloat(initialescrowWalletUsd) - parseFloat(totalPay)
+       const updateshopperescrow = await Members.updateShopperEscrow(finalEscrowWalletUsd, req.user.id) 
       const updatewallet = await Members.updateWallet(finalBalanceBtc, finalBalanceUsd, noOfTransactions, offerbyid[0].earnerId) 
      
       if(updatewallet.affectedRows > 0){
