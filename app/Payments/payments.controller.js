@@ -97,18 +97,18 @@ exports.getTransactionHistory = async(req, res) =>{
 // post/initailise payment
 
 exports.postPayment = async(req,res)=>{
-    if (!req.body){
-        res.status(400).send({message:"Content cannot be empty"});
-    }
-console.log(req.body)
-
+//console.log(req.body)
+let label = uuid.v4()
+         
+getAddress = await axios.get( 'https://block.io/api/v2/get_new_address/?api_key='+process.env.api_key+'&label='+label+'' ) 
+console.log(getAddress.data)
    
-    const { receiverAddress } = req.body;
-   // var userId = decoded.id;
-    if (receiverAddress ){
+   let  receiverAddress = getAddress.data.data.address;
+  console.log(receiverAddress)
+ 
         if ( receiverAddress==="" ){
             res.status(400).send({
-                message:"Incorrect entry format"
+                message:"Address not genarated"
             });
         }else{
             
@@ -119,7 +119,7 @@ console.log(req.body)
                      let noOfCheck = 0;
 
                      const createtransaction =await Payments.createTransaction( type, status,transactionDate,  receiverAddress, noOfCheck, req.user.id)
-                     res.status(200).send({message:"Details gotten. make your payment to the address given to you now "})
+                     res.status(200).send(  getAddress.data)
     
                     
                 
@@ -128,11 +128,7 @@ console.log(req.body)
                 res.status(500).send({message:"Error while creating member "})
             }
         }
-    }else{
-        res.status(400).send({
-            message:"Incorrect entry format"
-        });
-    }
+    
 }
 
 

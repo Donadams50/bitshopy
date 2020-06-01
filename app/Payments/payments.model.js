@@ -22,9 +22,9 @@ Payments.createTransaction = async function(  type, status,transactionDate,  rec
      await connection.beginTransaction();
     try
     {
-        let status = "Pending"
+       // let status = "Pending"
        
-         const result = await connection.query('INSERT into transactions SET  type=?, status=?, transactionDate=?,  receiverAddress=?, noOfCheck=?, userId=?', [   type, status,transactionDate,  receiverAddress, noOfCheck, userId])
+         const result = await connection.query('INSERT into transactions SET type=?, status=?, transactionDate=?,  receiverAddress=?, noOfCheck=?, userId=?', [   type, status, transactionDate,  receiverAddress, noOfCheck, userId])
        
                                                                                                                        
              await connection.commit();

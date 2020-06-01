@@ -108,18 +108,20 @@ console.log(req.body)
              
            console.log(get_wishlist.data)
              if (get_wishlist.data === null){
-                res.status(400).send({message:"Invalid wishlist url"})
+                res.status(400).send({message:"Invalid wishlist url or it has been purchased"})
              }else{
          // get_wishlist2 = await scraper.scrape(''+url+'' )
              let totalItemAmount = 0;
              let  wishList = [];
              let finalWishlist ={}
                  finalWishlist.wishlistValid = true
+         let url = "http://www.amazon.com/gp/aws/cart/add.html?AssociateTag=your-tag-here-20"
                for( var i = 0; i < get_wishlist.data.length; i++){
                     
 
-                            basic= await PersistOneByOne(get_wishlist.data[i]);
-                            console.log(basic.price)
+                            basic= await PersistOneByOne(get_wishlist.data[i], i);
+                            console.log(basic.url)
+                            url = url+basic.url
                             totalItemAmount = parseFloat(totalItemAmount) + parseFloat(basic.price);
                             console.log(totalItemAmount)
                            if(basic.itemValid === false){
@@ -129,6 +131,7 @@ console.log(req.body)
                             }
                             finalWishlist.totalItemAmount = totalItemAmount;
                             finalWishlist.wishlistItems = wishList
+                            finalWishlist.url = url;
                                 if (finalWishlist.wishlistValid === true){
                                     res.status(200).send(finalWishlist)
                                 }else{
@@ -160,7 +163,7 @@ exports.createOffer = async(req,res)=>{
     }
 console.log(req.body)
            
-    const {  wishlistItems, noOfItems, shopperId, discount, originalTotalPrice, totalPay, bitshopyFee, savedFee, taxPaid, onlyPrime , shippingFee, taxFee, wishlistUrl} = req.body;
+    const {  wishlistItems, noOfItems, shopperId, discount, originalTotalPrice, totalPay, bitshopyFee, savedFee, taxPaid, onlyPrime , shippingFee, taxFee, wishlistUrl, url} = req.body;
    
     // let re4 = /\w{13}/g;       
     // let found4 = wishlistUrl.match(re4);
@@ -174,8 +177,8 @@ console.log(req.body)
     const upperCaseWords = wishlistUrl.match(/(\b[A-Z0-9][A-Z0-9]+|\b[A-Z]\b)/g);
                         console.log(upperCaseWords[0])
                         wishlistId = upperCaseWords[0]
-    if (wishlistItems && wishlistId && noOfItems && shopperId && discount && originalTotalPrice && totalPay && bitshopyFee && savedFee && wishlistUrl){
-        if ( wishlistItems ==="" || wishlistId ==="" || noOfItems==="" || shopperId==="" || discount==="" || originalTotalPrice==="" || totalPay==="" || bitshopyFee==="" || savedFee===""||wishlistUrl==="" ){
+    if (wishlistItems && wishlistId && noOfItems && shopperId && discount && originalTotalPrice && totalPay && bitshopyFee && savedFee && wishlistUrl && url){
+        if ( wishlistItems ==="" || wishlistId ==="" || noOfItems==="" || shopperId==="" || discount==="" || originalTotalPrice==="" || totalPay==="" || bitshopyFee==="" || savedFee===""||wishlistUrl==="" || url ==="" ){
             res.status(400).send({
                 message:"Incorrect entry format"
             });
@@ -195,7 +198,7 @@ console.log(req.body)
                 if (isWishListExist.length>0){
                     res.status(400).send({message:"wishlist already exist"})
                 }else{
-                const createoffer = await Items.createOffer(wishlistId, noOfItems, shopperId, discount, originalTotalPrice, totalPay, bitshopyFee, savedFee, taxPaid, onlyPrime, shippingFee, taxFee,wishlistUrl )
+                const createoffer = await Items.createOffer(wishlistId, noOfItems, shopperId, discount, originalTotalPrice, totalPay, bitshopyFee, savedFee, taxPaid, onlyPrime, shippingFee, taxFee, url, wishlistUrl )
 
               // console.log(saveduser)
             if (createoffer.insertId >=1){
@@ -204,13 +207,13 @@ console.log(req.body)
 
                 for( var i = 0; i < wishlistItems.length; i++){
                     basic= await PersistOneByOne2(wishlistItems[i], createoffer.insertId , wishlistId);
-                
+                    
                   }
                   const userDetails2 = await Members.findDetailsById(shopperId)
                   if (userDetails2.length>0){
-                      console.log(userDetails2[0].walletBalanceBtc)
-                      console.log(userDetails2[0].walletBalanceBtc)
-                      console.log(userDetails2[0].noOfTransactions)
+                 //     console.log(userDetails2[0].walletBalanceBtc)
+                  //    console.log(userDetails2[0].walletBalanceBtc)
+                  //    console.log(userDetails2[0].noOfTransactions)
                 //      console.log(userDetails2[0].escrowWalletBtc)
                       let type = "Spent"
                       let status = "Success"
@@ -469,11 +472,12 @@ async function PersistOneByOne2(wishlistItems, wishlistTableId, wishlistId ){
 }
 
  // called function
- async function PersistOneByOne(getWishListData){
+ async function PersistOneByOne(getWishListData, i){
 
   try{
       await delay();
       //console.log(getWishListData)
+      number = i +1;
       wishlistItem = {}
                     let wishlist =  JSON.stringify(getWishListData);
                  console.log(wishlist)
@@ -505,6 +509,12 @@ async function PersistOneByOne2(wishlistItems, wishlistTableId, wishlistId ){
                 var res = found[0].substring(13)
             
             }
+
+            const itemId = getWishListData.link.match(/(\b[A-Z0-9][A-Z0-9]+|\b[A-Z]\b)/g);
+             //   console.log(itemId)
+                 itemid = itemId[0]
+         console.log(itemid)
+       //     http://www.amazon.com/gp/aws/cart/add.html?AssociateTag=your-tag-here-20&ASIN.1=B003IXYJYO&Quantity.1=2&ASIN.2=B0002KR8J4&Quantity.2=1&ASIN.3=B0002ZP18E&Quantity.3=1&ASIN.4=B0002ZP3ZA&Quantity.4=2&ASIN.5=B004J2JG6O&Quantity.5=1
           //  var res1 = found1[0].substring(13);
          //   var  res2   = res1.replace(/,/g, '')
                   
@@ -517,6 +527,7 @@ async function PersistOneByOne2(wishlistItems, wishlistTableId, wishlistId ){
                 wishlistItem.comment = getWishListData.comment;
                 wishlistItem.itemValid = itemValid;
                 wishlistItem.price  = res;
+                wishlistItem.url  =  '&ASIN.'+number+'='+itemid+'&Quantity.'+number+'=1';
               //  wishlistItem.dateAdded = res2;
                 wishlistItem.price2= price2
 
@@ -592,7 +603,16 @@ exports.cancelOfferTemp = async(req,res)=>{
                 }
            else{
         
-            
+            const getearner = await Items.getEarner(req.params.offerId, req.user.id)
+    const userDetails = await Members.findDetailsById(getearner[0].shopperId)
+    const emailFrom = 'Bitshopy   <noreply@bitshopy.com>';
+    const subject = 'Offer Cancelled';                      
+    const emailTo = userDetails[0].email.toLowerCase();
+    const shopperUsername = userDetails[0].username
+    const earnerUsername = getearner[0].username
+    const cancellationReason = " Purchased details not provided"
+    const text = "boring-snyder-80af72.netlify.app/#/earncrypto" 
+   processEmail(emailFrom, emailTo, subject, text, shopperUsername, earnerUsername, cancellationReason);
              let   status = "Pending"
              let   earnerId = " "
             let exactAcceptTime =" "
@@ -635,11 +655,12 @@ exports.acceptOffer = async(req,res)=>{
     }
         console.log(req.body)
        
-    const { amazonOrderId, shopperId, earnerId, wishlistTableId, deliveryDate, wishlistId, orderLink} = req.body;
+    const { amazonOrderMessage, shopperId, earnerId, wishlistTableId, wishlistId, orderLink} = req.body;
     console.log(wishlistTableId)
-    
-    if (amazonOrderId &&shopperId && earnerId && wishlistTableId && deliveryDate && wishlistId && orderLink ){
-        if ( amazonOrderId==="" ||shopperId  ==="" || earnerId==="" || wishlistTableId ==="" || deliveryDate===""|| wishlistId==="" || orderLink ===""){
+    //deliveryDate
+    //amazonOrderId
+    if (amazonOrderMessage &&shopperId && earnerId && wishlistTableId  && wishlistId && orderLink ){
+        if ( amazonOrderMessage ===" " ||shopperId  ==="" || earnerId==="" || wishlistTableId ==="" || wishlistId==="" || orderLink ===""){
             res.status(400).send({
                 message:"Incorrect entry format"
             });
@@ -667,14 +688,25 @@ exports.acceptOffer = async(req,res)=>{
 if (diffInMinutes > 30 || getwishlistbyid[0].status !="Accepted" ){
     res.status(400).send({message:"Your time has elapsed"})
 }else{
-             let   bitshopyOrderId = uuid.v4();
+
+            let re = /(Number:\d+\-\d+\-\d+)/g;
+           // let re2 = /(date-added\"\:\"\w+\s\d+\,\s\d+)/g;
+            let found = amazonOrderMessage.match(re);
+             console.log(found);
+             var amazonOrderId = found[0].substring(7)
+             let re1 = /(delivery: \w+\s\d+\,\s\d+)/g;
+             let found2 = amazonOrderMessage.match(re1)
+             console.log(found2)
+             var deliveryDate1 = found2[0].substring(10)
+             var deliveryDate = convert(deliveryDate1)
+             let   bitshopyOrderId = getCode();
              let   status = "Waiting for confirmation"
              let   orderDate = new Date();
              const createorder = await Items.acceptOffer(amazonOrderId, shopperId, earnerId, wishlistTableId,  bitshopyOrderId,  status, deliveryDate,wishlistId, orderLink, orderDate)
                   
              if (createorder.insertId > 0){
              
-                console.log(getwishlistbyid.shopperId)
+                //console.log(getwishlistbyid.shopperId)
                  
                 let text =  ''+req.user.username+' submitted order #'+amazonOrderId+'  delivery date  '+deliveryDate+' and Order link  '+orderLink+' '
                 const sendmessage = await Items.sendMessage( wishlistTableId, text, req.user.id, status, getwishlistbyid[0].shopperId)
@@ -1052,4 +1084,50 @@ function millisToMinutesAndSeconds(millis) {
     var minutes = Math.floor(millis / 60000);
     
     return minutes
+  }
+  function getCode(){
+    var numbers = "0123456789";
+
+    var chars= "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  
+    var code_length = 10;
+    var number_count = 6;
+    var letter_count = 4;
+  
+    var code = '';
+  
+    for(var i=0; i < code_length; i++) {
+       var letterOrNumber = Math.floor(Math.random() * 2);
+       if((letterOrNumber == 0 || number_count == 0) && letter_count > 0) {
+          letter_count--;
+          var rnum = Math.floor(Math.random() * chars.length);
+          code += chars[rnum];
+       }
+       else {
+          number_count--;
+          var rnum2 = Math.floor(Math.random() * numbers.length);
+          code += numbers[rnum2];
+       }
+    }
+return code
+}
+
+function convert(str) {
+    var mnths = {
+        January: "01",
+        February: "02",
+        March: "03",
+        April: "04",
+        May: "05",
+        June: "06",
+        July: "07",
+        August: "08",
+        September: "09",
+        Octorber: "10",
+        November: "11",
+        December: "12"
+      },
+      date = str.split(" ");
+  
+    return [date[2], mnths[date[0]], date[1]].join("-");
   }

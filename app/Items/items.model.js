@@ -31,14 +31,14 @@ const Items = function(){
 
 
     // create wishlist
-    Items.createOffer = async function(wishlistId, noOfItems, shopperId, discount, originalTotalPrice, totalPay, bitshopyFee, savedFee, taxPaid, onlyPrime, shippingFee, taxFee, wishlistUrl){
+    Items.createOffer = async function(wishlistId, noOfItems, shopperId, discount, originalTotalPrice, totalPay, bitshopyFee, savedFee, taxPaid, onlyPrime, shippingFee, taxFee, Url, wishlistUrl){
         const connection = await sql.getConnection();
          await connection.beginTransaction();
         try
         {
             let status = "Pending"
            
-             const result = await connection.query('INSERT into wishlist SET  wishlistId=?, noOfItems=?,  shopperId=?, discount=?, originalTotalPrice=?, totalPay=?, bitshopyFee=?, savedFee=?, status=?, taxPaid=?, onlyPrime=?, shippingFee=?, taxFee=?, wishlistUrl=?', [wishlistId, noOfItems, shopperId, discount, originalTotalPrice, totalPay, bitshopyFee, savedFee,status, taxPaid, onlyPrime, shippingFee, taxFee, wishlistUrl])
+             const result = await connection.query('INSERT into wishlist SET  wishlistId=?, noOfItems=?,  shopperId=?, discount=?, originalTotalPrice=?, totalPay=?, bitshopyFee=?, savedFee=?, status=?, taxPaid=?, onlyPrime=?, shippingFee=?, taxFee=?, purchaseUrl=?, wishlistUrl=?', [wishlistId, noOfItems, shopperId, discount, originalTotalPrice, totalPay, bitshopyFee, savedFee,status, taxPaid, onlyPrime, shippingFee, taxFee, Url, wishlistUrl])
            
                                                                                                                            
                  await connection.commit();
@@ -645,9 +645,9 @@ if (diffInMinutes >= 30){
      let link = item.orderLink;
      console.log(link)
      getStatus= await axios.get( ''+link+'' ) 
-//console.log( getStatus.data)
-              let re6 = /(Ordered\s\<\w+\s\w+\=\"\w+\"\>\w+\,\s\w+\s\d+)/g;     
-                  
+console.log( "yes")
+          //    let re6 = /(Ordered\s\<\w+\s\w+\=\"\w+\"\>\w+\,\s\w+\s\d+)/g;     
+              let re6 =   /(Ordered\s\<\w+\s\w+\=\"\w+\"\>\w+\,\s\w+\s\d+)/g; 
               let found6 =  getStatus.data.match(re6);
               if(found6 === null){
                 status = "Cancelled"
@@ -677,13 +677,13 @@ if (diffInMinutes >= 30){
               }else{
               console.log(found6);
               wid = found6[0]
-              status = "Not shipped yet"
+              statusf = "Not shipped yet"
               const connection = await sql.getConnection()
               await connection.beginTransaction()
               try{ 
              
-                const result = await connection.query('UPDATE wishlist SET status=? where id =?', [  status, item.id])
-                 console.log(result)
+                const result = await connection.query('UPDATE wishlist SET status=? where id =?', [  statusf, item.id])
+                // console.log(result)
                  let  text = "Order confirmed, but not shipped yet"
                  let isRead = false;
               const result1 = await connection.query('INSERT into messages SET wishlistTableId=?, text=?, status =?, isRead=?, messageTo=?', [ item.id, text, status, isRead, item.shopperId])
