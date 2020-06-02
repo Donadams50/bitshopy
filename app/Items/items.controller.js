@@ -463,8 +463,10 @@ exports.getAllItemsInOffer= async(req, res) =>{
                 let cors ="true"
                 let currency = "USD"
               getBtcPrice = await axios.get('https://blockchain.info/tobtc?currency='+currency+'&value='+allOfferItem.offer[0].totalPay+'&cors='+cors+'' )
+              getBtcPriceOriginal = await axios.get('https://blockchain.info/tobtc?currency='+currency+'&value='+allOfferItem.offer[0].originalTotalPrice+'&cors='+cors+'' )
               allOfferItem.offer[0].btcPrice = getBtcPrice.data
-                  console.log(getBtcPrice.data)
+              allOfferItem.offer[0].originalbtcPrice = getBtcPriceOriginal.data
+                 // console.log(getBtcPrice.data)
               
                 res.status(200).send(allOfferItem)
             }else if(allOfferItem.offerItems.length=== 0){
