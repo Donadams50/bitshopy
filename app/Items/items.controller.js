@@ -308,11 +308,52 @@ exports.getAllOffer = async(req, res) =>{
     
 }
 
+
+exports.getAllOfferNoLogin = async(req, res) =>{
+  
+    try{
+        
+      
+            const allOffer = await Items.getAllOfferNoLogin()
+            if (allOffer.length > 0){
+                
+               console.log(allOffer)
+               for( var i = 0; i < allOffer.length; i++){
+                let cors ="true"
+              let currency = "USD"
+            getBtcPrice = await axios.get('https://blockchain.info/tobtc?currency='+currency+'&value='+allOffer[i].totalPay+'&cors='+cors+'' )
+                allOffer[i].btcPrice = getBtcPrice.data
+                console.log(getBtcPrice.data)
+              }
+                res.status(200).send(allOffer)
+            }else if(allOffer.length=== 0){
+           //     console.log(allGroup.length)
+                res.status(204).send("No offer created yet")
+            }
+            else{
+               
+                res.status(400).send({message:"error while getting offer"}) 
+            }
+           
+           
+          
+        }
+       
+    catch(err){
+     console.log(err)
+        res.status(500).send({message:"issues while retrieving offers"})
+        
+    }
+  
+    
+}
+
 // GET all offer qualified for by a single user
 exports.getAllOfferQualifiedFor= async(req, res) =>{
 
-   let { type} = req.query;
-   console.log(type)
+   let { type, from , to} = req.query;
+   console.log(from)
+   console.log(to)
   if (type === "unchecked"){
     const allOffer = await Items.getAllOffer(req.user.id )
     console.log(allOffer)
@@ -375,7 +416,7 @@ exports.getAllOfferQualifiedFor= async(req, res) =>{
             discount = 0;
             orderSizeLimit = 10000000
         }
-            const allOffer = await Items.getAllOfferQualifiedFor(discount, orderSizeLimit,req.user.id )
+            const allOffer = await Items.getAllOfferQualifiedFor(discount, orderSizeLimit,req.user.id, from , to )
             console.log(allOffer)
             if (allOffer.length >= 0){
                 logger.log({
@@ -692,11 +733,17 @@ if (diffInMinutes > 30 || getwishlistbyid[0].status !="Accepted" ){
             let re = /(Number:\d+\-\d+\-\d+)/g;
            // let re2 = /(date-added\"\:\"\w+\s\d+\,\s\d+)/g;
             let found = amazonOrderMessage.match(re);
-             console.log(found);
-             var amazonOrderId = found[0].substring(7)
+            // console.log(found);
+           
              let re1 = /(delivery: \w+\s\d+\,\s\d+)/g;
              let found2 = amazonOrderMessage.match(re1)
-             console.log(found2)
+           //  console.log(found2)
+           if( found === null ||  found2 === nulll){
+            res.status(400).send({
+                message:" Invalid Confirmation  message "
+            });
+           }else{
+            var amazonOrderId = found[0].substring(7)
              var deliveryDate1 = found2[0].substring(10)
              var deliveryDate = convert(deliveryDate1)
              let   bitshopyOrderId = getCode();
@@ -717,6 +764,9 @@ if (diffInMinutes > 30 || getwishlistbyid[0].status !="Accepted" ){
                     message:" Accept Offer not succesfully"
                 });
              } 
+            }
+
+
             }           
            } 
 

@@ -10,7 +10,9 @@ module.exports = app =>{
   
     // get all offer  
     app.get("/alloffer", verifyToken, item.getAllOffer)
-
+    
+// get all offer without login
+    app.get("/nonuseroffer", item.getAllOfferNoLogin)
     // offer qualified for
     app.get("/useroffer", verifyToken, item.getAllOfferQualifiedFor)
 

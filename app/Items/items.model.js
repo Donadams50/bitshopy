@@ -178,6 +178,21 @@ const Items = function(){
         return (err)
     }
   }
+// get all offer not user
+  
+  Items.getAllOfferNoLogin= async function(){
+    try{
+        let status = "Pending";
+        let status3 = "Completed"
+    //    const result = await sql.query('SELECT * FROM wishlist where status=? ', [status])
+        const result = await sql.query('SELECT w.* , p.username, p.level FROM wishlist w, profile p where w.shopperId = p.id AND status=?  ', [ status])
+        const data= result[0]
+        return data
+    }catch(err){
+        console.log(err)
+        return (err)
+    }
+  }
 // get earner details
 
 Items.getEarner= async function(offerId, earnerId){
@@ -194,7 +209,7 @@ Items.getEarner= async function(offerId, earnerId){
 }
 // get all offer qualified for by a user
 
-  Items.getAllOfferQualifiedFor= async function(discount, orderSizeLimit, userId){
+  Items.getAllOfferQualifiedFor= async function(discount, orderSizeLimit, userId ,from , to){
     try{ 
         let status = "Pending";
         let status2= "Accepted"
@@ -202,7 +217,7 @@ Items.getEarner= async function(offerId, earnerId){
         
 
 // const result = await sql.query('SELECT * , profile.username, profile.level FROM wishlist INNER JOIN profile ON wishlist.shopperId = profile.id where status=? AND discount>=? AND totalPay<=? AND shopperId!=?', [status, discount, orderSizeLimit,shopperId])
-const result = await sql.query('SELECT w.* , p.username, p.level FROM wishlist w, profile p where ((w.shopperId = p.id AND w.shopperId=? AND w.status!=?) OR (w.earnerId = p.id  AND w.earnerId=? AND w.status=? ) OR ( w.shopperId = p.id AND w.discount>=? AND w.totalPay<=?  AND w.status=?)) ', [userId,status3, userId, status2, discount, orderSizeLimit,  status])
+const result = await sql.query('SELECT w.* , p.username, p.level FROM wishlist w, profile p where ((w.shopperId = p.id AND w.shopperId=? AND w.status!=?  AND ( totalPay BETWEEN ? AND ?)) OR (w.earnerId = p.id  AND w.earnerId=? AND w.status=? AND ( totalPay BETWEEN ? AND ?)) OR ( w.shopperId = p.id AND w.discount>=? AND w.totalPay<=?  AND w.status=? AND ( totalPay  BETWEEN ? AND ?) )) ', [userId,status3, from , to, userId, status2, from , to, discount, orderSizeLimit,  status, from , to,])
 //const result = await sql.query('SELECT w.*, p.username, p.level FROM wishlist w, profile p where ((w.shopperId = p.id AND w.shopperId=?) OR ( w.earnerId = p.id AND w.earnerId=? AND w.status!=? AND w.status!=? ))  ', [userId, userId,  status, status2])      
 //  const result = await sql.query('SELECT * FROM wishlist where status=? AND discount>=? AND totalPay<=?', [status, discount, orderSizeLimit])
   console.log(result[0])
@@ -602,6 +617,23 @@ async function processArray(array) {
      diffInMinutes = millisToMinutesAndSeconds(Difference_In_Time)
      console.log(diffInMinutes)
   if (diffInMinutes > 33){
+
+    const emailFrom = 'Bitshopy   <noreply@bitshopy.com>';
+    const subject = 'Offer Cancelled';                      
+    const earn = await sql.query('SELECT w.* , p.username, p.email FROM wishlist w, profile p where w.earnerId = p.id  AND w.id=? AND w.earnerId=? ', [item.id, item.earnerId])
+    const shop = await sql.query('SELECT * from profile where id= ?', [item.shopperId])
+  //  console.log(earn[0][0])
+  //  console.log(shop[0][0].email)
+    const shopperUsername = shop[0][0].username
+    const earnerUsername = earn[0][0].username
+  //  console.log(shopperUsername)
+  //  console.log(earnerUsername)
+    const emailTo = shop[0][0].email.toLowerCase();
+    const cancellationReason = "The system detected that Your time has elasped"
+    const text = "boring-snyder-80af72.netlify.app/#/earncrypto" 
+   processEmail(emailFrom, emailTo, subject, text, shopperUsername, earnerUsername, cancellationReason);
+   processEmail(emailFrom, earn[0][0].email, subject, text, shopperUsername, earnerUsername, cancellationReason);
+
                 status = "Pending"
                 exactAcceptTime= ""
                 earnerId = ""
@@ -610,7 +642,8 @@ async function processArray(array) {
                 try{ 
                
                   const result = await connection.query('update wishlist SET status=?, earnerId=?, exactAcceptTime=? where id=?  ', [ status , earnerId, exactAcceptTime,  item.id])
-                   console.log(result)
+                  const result4 = await connection.query('Delete from messages  where wishlistTableId=?  ', [item.id])
+             //     console.log(result)
         
                
      
@@ -647,7 +680,8 @@ if (diffInMinutes >= 30){
      getStatus= await axios.get( ''+link+'' ) 
 console.log( "yes")
           //    let re6 = /(Ordered\s\<\w+\s\w+\=\"\w+\"\>\w+\,\s\w+\s\d+)/g;     
-              let re6 =   /(Ordered\s\<\w+\s\w+\=\"\w+\"\>\w+\,\s\w+\s\d+)/g; 
+             // let re6 =   /(Ordered\s\<\w+\s\w+\=\"\w+\"\>\w+\,\s\w+\s\d+)/g; 
+              let re6 = /(Ordered\s\<\w+\s\w+\=\"\w+\"\>\w+)/g; 
               let found6 =  getStatus.data.match(re6);
               if(found6 === null){
                 status = "Cancelled"
@@ -732,7 +766,7 @@ function millisToMinutesAndSeconds(millis) {
 
 
 // second cron
-var validatePayment = cron.schedule('30 20 * * *', async function() {
+var validatePayment = cron.schedule('30 15 * * *', async function() {
     console.log("i ran 3");
     const connection = await sql.getConnection()
     await connection.beginTransaction()
@@ -897,12 +931,12 @@ if (diffInHours >= 12 && item.status === "Cancelled"){
 
   let found = getStatus.data.match(re);
           if(found === null){
-              let re5= /(Shipped\s\<\w+\s\w+\=\"\w+\"\>\w+\,\s\w+\s\d+)/g;     
+              let re5= /(Shipped\s\<\w+\s\w+\=\"\w+\"\>\w+)/g;     
               
           let found5 =  getStatus.data.match(re5);
          
           if(found5 === null){
-              let re6 = /(Ordered\s\<\w+\s\w+\=\"\w+\"\>\w+\,\s\w+\s\d+)/g;     
+              let re6 = /(Ordered\s\<\w+\s\w+\=\"\w+\"\>\w+)/g;     
               
           let found6 =  getStatus.data.match(re6);
           if(found6 === null){
