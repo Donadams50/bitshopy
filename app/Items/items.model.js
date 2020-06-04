@@ -309,10 +309,14 @@ const result = await sql.query('SELECT w.* , p.username, p.level FROM wishlist w
   // earner has pending offer ?
   Items.UserHasPendingOffer= async function(userid){
     try{  
-         let status = "Completed"
-        let status2 = "Pending"
-        const result = await sql.query('SELECT * FROM wishlist where (status!=? OR status!=?) AND earnerId=?', [status, status2 ,userid])
-        const data= result[0]
+         let status = "Not shipped yet"
+        let status1 = "Accepeted"
+        let status2 = "Delivered"
+        let status3 = " Shipped"
+        let status4 = " Cancelled"
+        const result = await sql.query(' SELECT * wishlist where status =? OR status=? OR status=? OR status=? OR status=? AND earnerId=?', [status, status1, status2 , status3, status4, userid])
+    
+      //  SELECT * wishlist where status =? OR status=? OR status=? OR status=? OR status=? AND earnerId=191    const data= result[0]
         return data
     }catch(err){
      //   console.log(err)
@@ -813,11 +817,15 @@ async function delayedLogFinalPayment(item) {
    console.log(Differenc2)
    diffInHours2 = msToHours(Differenc2)
    console.log(diffInHours2)
-   if (diffInHours2 >= 24 && item.status === "Delivered"){
+   if (diffInHours2 >= 24 ){
     console.log("cc")
     const userDetails2 = await sql.query('SELECT * from profile where id= ?', [item.earnerId])
-    console.log(userDetails2[0][0])
-    const totalPay = item.totalPay;
+    const userDetails3 = await sql.query('SELECT * from profile where id= ?', [item.shopperId])
+    const initialescrowWalletUsd = userDetails3[0][0].escrowWalletUsd
+       let  finalEscrowWalletUsd = parseFloat(initialescrowWalletUsd) - parseFloat(item.totalPay)
+       //const updateshopperescrow = await Members.updateShopperEscrow(finalEscrowWalletUsd, item.shopperId) 
+   // console.log(userDetails2[0][0])
+    const totalPay = parseFloat(item.totalPay) - parseFloat(item.bitshopyFee)  ;
     const initailBalanceBtc = userDetails2[0][0].walletBalanceBtc
     //const initailBalanceUsd = await getConversionInUsd(initailBalanceBtc) 
     const noOfTransactions = parseInt(userDetails2[0][0].noOfTransactions) + 1
@@ -838,6 +846,7 @@ async function delayedLogFinalPayment(item) {
    try
    {    
     
+       const result5 = await connection.query('update profile SET  escrowWalletUsd=? where id =?',[finalEscrowWalletUsd, item.shopperId])
         const result = await connection.query('update profile SET walletBalanceBtc=?, walletBalanceUsd=?, noOfTransactions=? where id =?',[finalBalanceBtc, finalBalanceUsd, noOfTransactions, item.earnerId])
    
         const result1 = await connection.query('INSERT into transactions SET  amountUsd=?,  type=?, status=?, transactionDate=?, userId=?, wishlistTableId=?, amountBtc=?, initialBalance=?,finalBalance=? ', [totalPay, type, status, transactionDate, item.earnerId , item.id, totalPayBtc, initailBalanceBtc, finalBalanceBtc])
