@@ -31,14 +31,14 @@ const Items = function(){
 
 
     // create wishlist
-    Items.createOffer = async function(wishlistId, noOfItems, shopperId, discount, originalTotalPrice, totalPay, bitshopyFee, savedFee, taxPaid, onlyPrime, shippingFee, taxFee, Url, wishlistUrl){
+    Items.createOffer = async function(wishlistId, noOfItems, shopperId, discount, originalTotalPrice, totalPay, bitshopyFee, savedFee, taxPaid, onlyPrime, shippingFee, taxFee, Url, wishlistUrl, country){
         const connection = await sql.getConnection();
          await connection.beginTransaction();
         try
         {
             let status = "Pending"
            
-             const result = await connection.query('INSERT into wishlist SET  wishlistId=?, noOfItems=?,  shopperId=?, discount=?, originalTotalPrice=?, totalPay=?, bitshopyFee=?, savedFee=?, status=?, taxPaid=?, onlyPrime=?, shippingFee=?, taxFee=?, purchaseUrl=?, wishlistUrl=?', [wishlistId, noOfItems, shopperId, discount, originalTotalPrice, totalPay, bitshopyFee, savedFee,status, taxPaid, onlyPrime, shippingFee, taxFee, Url, wishlistUrl])
+             const result = await connection.query('INSERT into wishlist SET  wishlistId=?, noOfItems=?,  shopperId=?, discount=?, originalTotalPrice=?, totalPay=?, bitshopyFee=?, savedFee=?, status=?, taxPaid=?, onlyPrime=?, shippingFee=?, taxFee=?, purchaseUrl=?, wishlistUrl=?, country=?', [wishlistId, noOfItems, shopperId, discount, originalTotalPrice, totalPay, bitshopyFee, savedFee,status, taxPaid, onlyPrime, shippingFee, taxFee, Url, wishlistUrl, country])
            
                                                                                                                            
                  await connection.commit();
@@ -180,14 +180,21 @@ const Items = function(){
   }
 // get all offer not user
   
-  Items.getAllOfferNoLogin= async function(){
+  Items.getAllOfferNoLogin= async function(from , to, country){
     try{
         let status = "Pending";
         let status3 = "Completed"
+
+        if(country === "all"){
     //    const result = await sql.query('SELECT * FROM wishlist where status=? ', [status])
-        const result = await sql.query('SELECT w.* , p.username, p.level FROM wishlist w, profile p where w.shopperId = p.id AND status=?  ', [ status])
+        const result = await sql.query('SELECT w.* , p.username, p.level FROM wishlist w, profile p where w.shopperId = p.id AND status=?  AND ( totalPay BETWEEN ? AND ?)', [ status, from , to,])
         const data= result[0]
         return data
+        } else{
+          const result = await sql.query('SELECT w.* , p.username, p.level FROM wishlist w, profile p where w.shopperId = p.id AND status=?  AND ( totalPay BETWEEN ? AND ?) AND country=?', [ status, from , to, country])
+          const data= result[0]
+          return data
+        }
     }catch(err){
         console.log(err)
         return (err)
@@ -209,20 +216,29 @@ Items.getEarner= async function(offerId, earnerId){
 }
 // get all offer qualified for by a user
 
-  Items.getAllOfferQualifiedFor= async function(discount, orderSizeLimit, userId ,from , to){
+Items.getAllOfferQualifiedFor= async function(discount, orderSizeLimit, userId ,from , to, country){
     try{ 
         let status = "Pending";
         let status2= "Accepted"
         let status3 = "Completed"
+        console.log(country)
         
-
+        
+if(country === "all"){
 // const result = await sql.query('SELECT * , profile.username, profile.level FROM wishlist INNER JOIN profile ON wishlist.shopperId = profile.id where status=? AND discount>=? AND totalPay<=? AND shopperId!=?', [status, discount, orderSizeLimit,shopperId])
 const result = await sql.query('SELECT w.* , p.username, p.level FROM wishlist w, profile p where ((w.shopperId = p.id AND w.shopperId=? AND w.status!=?  AND ( totalPay BETWEEN ? AND ?)) OR (w.earnerId = p.id  AND w.earnerId=? AND w.status=? AND ( totalPay BETWEEN ? AND ?)) OR ( w.shopperId = p.id AND w.discount>=? AND w.totalPay<=?  AND w.status=? AND ( totalPay  BETWEEN ? AND ?) )) ', [userId,status3, from , to, userId, status2, from , to, discount, orderSizeLimit,  status, from , to,])
 //const result = await sql.query('SELECT w.*, p.username, p.level FROM wishlist w, profile p where ((w.shopperId = p.id AND w.shopperId=?) OR ( w.earnerId = p.id AND w.earnerId=? AND w.status!=? AND w.status!=? ))  ', [userId, userId,  status, status2])      
 //  const result = await sql.query('SELECT * FROM wishlist where status=? AND discount>=? AND totalPay<=?', [status, discount, orderSizeLimit])
-  console.log(result[0])
-        const data= result[0]
-        return data
+const data= result[0]
+return data
+}
+else{
+  const result = await sql.query('SELECT w.* , p.username, p.level FROM wishlist w, profile p where ((w.shopperId = p.id AND w.shopperId=? AND w.status!=?  AND ( totalPay BETWEEN ? AND ?) AND country=?) OR (w.earnerId = p.id  AND w.earnerId=? AND w.status=? AND ( totalPay BETWEEN ? AND ?) AND country=?) OR ( w.shopperId = p.id AND w.discount>=? AND w.totalPay<=?  AND w.status=? AND ( totalPay  BETWEEN ? AND ?) AND country=?)) ', [userId,status3, from , to, country, userId, status2, from , to,  country, discount, orderSizeLimit,  status, from , to, country])
+  const data= result[0]
+  return data
+}
+//console.log(result[0])
+       
     }catch(err){
        console.log(err)
         return (err)
@@ -312,14 +328,15 @@ const result = await sql.query('SELECT w.* , p.username, p.level FROM wishlist w
          let status = "Not shipped yet"
         let status1 = "Accepeted"
         let status2 = "Delivered"
-        let status3 = " Shipped"
-        let status4 = " Cancelled"
-        const result = await sql.query(' SELECT * wishlist where status =? OR status=? OR status=? OR status=? OR status=? AND earnerId=?', [status, status1, status2 , status3, status4, userid])
+        let status3 = "shipped"
+        let status4 = "Cancelled"
+        const result = await sql.query('SELECT * from wishlist where (status =? OR status=? OR status=? OR status=? OR status=?) AND earnerId=?', [status, status1, status2 , status3, status4, userid])
     
       //  SELECT * wishlist where status =? OR status=? OR status=? OR status=? OR status=? AND earnerId=191    const data= result[0]
-        return data
+      data = result[0] 
+      return data
     }catch(err){
-     //   console.log(err)
+       console.log(err)
         return (err)
     }
   }
@@ -490,6 +507,31 @@ Items.deleteOffer= async function(id){
     }
 }
 
+// shopper update offer
+Items.updateOffer = async function( discount, originalTotalPrice, totalPay, bitshopyFee, savedFee, taxPaid, onlyPrime, shippingFee, taxFee ,offerId){
+  const connection = await sql.getConnection();
+   await connection.beginTransaction();
+  try
+  {    
+  
+   
+       const result = await connection.query('update wishlist SET discount=?, originalTotalPrice=?, totalPay=?, bitshopyFee=?, savedFee=?,taxPaid=?, onlyPrime=?, shippingFee=?, taxFee=? where id=?', [ discount, originalTotalPrice, totalPay, bitshopyFee, savedFee, taxPaid, onlyPrime, shippingFee, taxFee ,offerId])
+       console.log(result[0])
+        
+          await connection.commit();
+          return result[0]
+
+       
+                                                                                                 
+            
+  }catch(err){
+       await connection.rollback();
+       console.log(err)
+       return err
+  }finally{
+      connection.release();
+  }
+}
 
 // shopper confirm delivery
 Items.confirmDelivery = async function(id){

@@ -41,6 +41,8 @@ module.exports = app =>{
 
     app.post("/notification", verifyToken, item.sendMessage);
 
+    app.post("/modifyoffer", verifyToken, item.modifyOffer);
+
     app.get("/btcrate",  item.getBtcRate)
     
 

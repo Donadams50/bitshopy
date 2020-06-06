@@ -17,7 +17,7 @@ dotenv.config();
 //     queueLimit:dbConfig.queueLimit
 
 // }
-process.env.CLEARDB_DATABASE_URL
+ process.env.CLEARDB_DATABASE_URL
 );
 // console.log(db)
 if(db.state === 'disconnected'){

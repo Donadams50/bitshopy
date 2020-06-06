@@ -76,19 +76,56 @@ console.log(req.body)
                 const upperCaseWords = wishlistUrl.match(/(\b[A-Z0-9][A-Z0-9]+|\b[A-Z]\b)/g);
                    //     console.log(upperCaseWords[0])
                         wid = upperCaseWords[0]
-                console.log(wid)
-                // let re4 = /\w{13}/g;       
-                // let found4 = wishlistUrl.match(re4);
-                // if(found4 === null){
-                //     let re5= /\w{12}/g;       
-                // let found5 = wishlistUrl.match(re5);
-                // wid = found5[0]
-                // console.log(wid)
-                // }else{
-                //     wid = found4[0]
-                //     console.log(wid)
-                // }
-               // console.log(found4[0]); 
+              //  console.log(wid)
+               
+                let re = /(amazon.com)/g;
+                let found = wishlistUrl.match(re);
+
+             if (found === null ){ 
+                let re = /(amazon.co.uk)/g;
+                let found = wishlistUrl.match(re);
+                if (found === null ){ 
+                    let re = /(amazon.ca)/g;
+                    let found = wishlistUrl.match(re);
+                    if (found === null ){ 
+                        let re = /(amazon.co.jp)/g;
+                        let found = wishlistUrl.match(re);
+                        if (found === null ){ 
+                            let re = /(amazon.com.mx)/g;
+                            let found = wishlistUrl.match(re);
+                            if (found === null ){ 
+                                let re = /(amazon.de)/g;
+                                let found = wishlistUrl.match(re);
+                                if (found === null ){ 
+                                    country = "invalid"
+                                 
+                                
+                                }else{
+                                    country = "DE"
+                                }
+                            
+                            }else{
+                                country = "MX"
+                            }
+                        }else{
+                        country = "JP"
+                        }
+                    
+                    }else{
+                    country = "CA"
+                    }
+                
+                }
+                else{
+                    country  = "UK";    
+                }
+            
+            }
+                 else{
+            
+                  country  = "US";    
+
+                  }
                 const isWishListExist = await Items.findByWishlistId(wid, wishlistUrl)
                 if (isWishListExist.length>0){
                     res.status(400).send({message:"wishlist already exist"})
@@ -129,9 +166,11 @@ console.log(req.body)
                            }
                             wishList.push(basic);   
                             }
+                           // console.log(country)
                             finalWishlist.totalItemAmount = totalItemAmount;
                             finalWishlist.wishlistItems = wishList
                             finalWishlist.url = url;
+                            finalWishlist.country = country;
                                 if (finalWishlist.wishlistValid === true){
                                     res.status(200).send(finalWishlist)
                                 }else{
@@ -163,7 +202,7 @@ exports.createOffer = async(req,res)=>{
     }
 console.log(req.body)
            
-    const {  wishlistItems, noOfItems, shopperId, discount, originalTotalPrice, totalPay, bitshopyFee, savedFee, taxPaid, onlyPrime , shippingFee, taxFee, wishlistUrl, url} = req.body;
+    const {  wishlistItems, noOfItems, shopperId, discount, originalTotalPrice, totalPay, bitshopyFee, savedFee, taxPaid, onlyPrime , shippingFee, taxFee, wishlistUrl, url, country} = req.body;
    
     // let re4 = /\w{13}/g;       
     // let found4 = wishlistUrl.match(re4);
@@ -177,8 +216,8 @@ console.log(req.body)
     const upperCaseWords = wishlistUrl.match(/(\b[A-Z0-9][A-Z0-9]+|\b[A-Z]\b)/g);
                         console.log(upperCaseWords[0])
                         wishlistId = upperCaseWords[0]
-    if (wishlistItems && wishlistId && noOfItems && shopperId && discount && originalTotalPrice && totalPay && bitshopyFee && savedFee && wishlistUrl && url){
-        if ( wishlistItems ==="" || wishlistId ==="" || noOfItems==="" || shopperId==="" || discount==="" || originalTotalPrice==="" || totalPay==="" || bitshopyFee==="" || savedFee===""||wishlistUrl==="" || url ==="" ){
+    if (wishlistItems && wishlistId && noOfItems && shopperId && discount && originalTotalPrice && totalPay && bitshopyFee && savedFee && wishlistUrl && url && country){
+        if ( wishlistItems ==="" || wishlistId ==="" || noOfItems==="" || shopperId==="" || discount==="" || originalTotalPrice==="" || totalPay==="" || bitshopyFee==="" || savedFee===""||wishlistUrl==="" || url ==="" || country === "" ){
             res.status(400).send({
                 message:"Incorrect entry format"
             });
@@ -198,7 +237,7 @@ console.log(req.body)
                 if (isWishListExist.length>0){
                     res.status(400).send({message:"wishlist already exist"})
                 }else{
-                const createoffer = await Items.createOffer(wishlistId, noOfItems, shopperId, discount, originalTotalPrice, totalPay, bitshopyFee, savedFee, taxPaid, onlyPrime, shippingFee, taxFee, url, wishlistUrl )
+                const createoffer = await Items.createOffer(wishlistId, noOfItems, shopperId, discount, originalTotalPrice, totalPay, bitshopyFee, savedFee, taxPaid, onlyPrime, shippingFee, taxFee, url, wishlistUrl, country)
 
               // console.log(saveduser)
             if (createoffer.insertId >=1){
@@ -267,9 +306,89 @@ console.log(req.body)
     }
 }
 
-// get all offer
-   
+exports.modifyOffer = async(req,res)=>{
+    if (!req.body){
+        res.status(400).send({message:"Content cannot be empty"});
+    }
 
+           
+    const {  shopperId, discount, originalTotalPrice, totalPay, bitshopyFee, savedFee, taxPaid, onlyPrime , shippingFee, taxFee, offerId} = req.body;
+    console.log(req.body)
+    if (shopperId && discount && originalTotalPrice && totalPay && bitshopyFee && savedFee && offerId ){
+        if (  shopperId==="" || discount==="" || originalTotalPrice==="" || totalPay==="" || bitshopyFee==="" || savedFee==="" ||offerId==="" ){
+            res.status(400).send({
+                message:"Incorrect entry format"
+            });
+        }else{
+            
+            try{            
+               
+                const updateOffer = await Items.updateOffer(  discount, originalTotalPrice, totalPay, bitshopyFee, savedFee, taxPaid, onlyPrime, shippingFee, taxFee , offerId)
+
+              // console.log(saveduser)
+            if (updateOffer.affectedRows > 0){
+                console.log("ee");
+                console.log(updateOffer.insertId)
+
+                  const userDetails2 = await Members.findDetailsById(shopperId)
+                  if (userDetails2.length>0){
+                     console.log(userDetails2[0].walletBalanceBtc)
+                     console.log(userDetails2[0].walletBalanceBtc)
+                     console.log(userDetails2[0].noOfTransactions)
+                     console.log(userDetails2[0].escrowWalletUsd)
+                const getwishlistbyid = await Items.findWishlistById(offerId)
+                console.log(getwishlistbyid[0].totalPay)
+                      let cors ="true"
+                      let currency = "USD"
+                      const initailBalanceBtc = userDetails2[0].walletBalanceBtc
+                      //const initailBalanceUsd = userDetails2[0].walletBalanceUsd
+                      const initialescrowWalletUsd = userDetails2[0].escrowWalletUsd
+                      const noOfTransactions = userDetails2[0].noOfTransactions
+                      const getBtcPrice = await axios.get('https://blockchain.info/tobtc?currency='+currency+'&value='+getwishlistbyid[0].totalPay+'&cors='+cors+'' )
+                        amountBtc2 = getBtcPrice.data
+                        const getBtcPrice2 = await axios.get('https://blockchain.info/tobtc?currency='+currency+'&value='+totalPay+'&cors='+cors+'' )
+                        amountBtc = getBtcPrice2.data
+                        let  initailBalanceBtc2 = parseFloat(initailBalanceBtc) - parseFloat(amountBtc2)
+                        let finalBalanceBtc = parseFloat(initailBalanceBtc2) + parseFloat(amountBtc)
+                        let  initialescrowWalletUsd2 = parseFloat(initialescrowWalletUsd) - parseFloat(getwishlistbyid[0].totalPay)
+                        let  finalEscrowWalletUsd = parseFloat(initialescrowWalletUsd2) + parseFloat(totalPay)
+                        getUsdInBitcoin = await axios.get('https://blockchain.info/ticker')  
+                       console.log(initailBalanceBtc2)
+                        console.log(finalBalanceBtc)
+                        console.log(finalEscrowWalletUsd)
+                          let finalBalanceUsd = parseFloat(getUsdInBitcoin.data.USD.last) * parseFloat(finalBalanceBtc) 
+                    
+                    const updatewallet = await Members.updateWalletEscrow(finalBalanceBtc, finalBalanceUsd, noOfTransactions, shopperId, finalEscrowWalletUsd) 
+                }else{
+                    console.log("user not found")
+                }
+                  
+                  res.status(200).send({
+                                message:"offer created"
+                            })
+            }else{
+                res.status(400).send({message:"Error while updating offer "})
+                }
+
+                        
+   
+            
+        
+
+                    
+                
+            }catch(err){
+                console.log(err)
+                res.status(500).send({message:"Error while updating offer "})
+            }
+        }
+    }else{
+        res.status(400).send({
+            message:"Incorrect entry format"
+        });
+    }
+}
+// get all offer 
 exports.getAllOffer = async(req, res) =>{
   
     try{
@@ -313,17 +432,21 @@ exports.getAllOfferNoLogin = async(req, res) =>{
   
     try{
         
-      
-            const allOffer = await Items.getAllOfferNoLogin()
+        let { from , to, country} = req.query;
+            const allOffer = await Items.getAllOfferNoLogin(from , to, country)
             if (allOffer.length > 0){
                 
                console.log(allOffer)
                for( var i = 0; i < allOffer.length; i++){
                 let cors ="true"
               let currency = "USD"
-            getBtcPrice = await axios.get('https://blockchain.info/tobtc?currency='+currency+'&value='+allOffer[i].totalPay+'&cors='+cors+'' )
-                allOffer[i].btcPrice = getBtcPrice.data
-                console.log(getBtcPrice.data)
+              let priceEarner = parseFloat(allOffer[i].originalTotalPrice) +  parseFloat(allOffer[i].shippingFee) + parseFloat(allOffer[i].taxFee) 
+              getBtcPrice = await axios.get('https://blockchain.info/tobtc?currency='+currency+'&value='+allOffer[i].totalPay+'&cors='+cors+'' )
+              btcPriceEarner = await axios.get('https://blockchain.info/tobtc?currency='+currency+'&value='+priceEarner+'&cors='+cors+'' )
+              allOffer[i].btcPrice = getBtcPrice.data
+              allOffer[i].priceEarner = priceEarner
+              allOffer[i].priceEarnerBtc = btcPriceEarner.data
+            
               }
                 res.status(200).send(allOffer)
             }else if(allOffer.length=== 0){
@@ -351,9 +474,10 @@ exports.getAllOfferNoLogin = async(req, res) =>{
 // GET all offer qualified for by a single user
 exports.getAllOfferQualifiedFor= async(req, res) =>{
 
-   let { type, from , to} = req.query;
+   let { type, from , to, country} = req.query;
    console.log(from)
    console.log(to)
+   console.log(country)
   if (type === "unchecked"){
     const allOffer = await Items.getAllOffer(req.user.id )
     console.log(allOffer)
@@ -362,9 +486,12 @@ exports.getAllOfferQualifiedFor= async(req, res) =>{
         for( var i = 0; i < allOffer.length; i++){
             let cors ="true"
           let currency = "USD"
-        getBtcPrice = await axios.get('https://blockchain.info/tobtc?currency='+currency+'&value='+allOffer[i].totalPay+'&cors='+cors+'' )
-            allOffer[i].btcPrice = getBtcPrice.data
-            console.log(getBtcPrice.data)
+          let priceEarner = parseFloat(allOffer[i].originalTotalPrice) +  parseFloat(allOffer[i].shippingFee) + parseFloat(allOffer[i].taxFee) 
+          getBtcPrice = await axios.get('https://blockchain.info/tobtc?currency='+currency+'&value='+allOffer[i].totalPay+'&cors='+cors+'' )
+          btcPriceEarner = await axios.get('https://blockchain.info/tobtc?currency='+currency+'&value='+priceEarner+'&cors='+cors+'' )
+          allOffer[i].btcPrice = getBtcPrice.data
+          allOffer[i].priceEarner = priceEarner
+          allOffer[i].priceEarnerBtc = btcPriceEarner.data
             if(req.user.level === 1 && (allOffer[i].discount < 30 || allOffer[i].totalPay >75)){
                 allOffer[i].levelUp = true
            }else if(req.user.level === 2 && (allOffer[i].discount < 20 || allOffer[i].totalPay >150)){
@@ -416,20 +543,22 @@ exports.getAllOfferQualifiedFor= async(req, res) =>{
             discount = 0;
             orderSizeLimit = 10000000
         }
-            const allOffer = await Items.getAllOfferQualifiedFor(discount, orderSizeLimit,req.user.id, from , to )
+            const allOffer = await Items.getAllOfferQualifiedFor(discount, orderSizeLimit,req.user.id, from , to , country)
             console.log(allOffer)
             if (allOffer.length >= 0){
-                logger.log({
-                    level: 'info',
-                    message: 'group added to database'
-                  });
+                
                 console.log(allOffer.length)
                 for( var i = 0; i < allOffer.length; i++){
                     let cors ="true"
                   let currency = "USD"
+                 let priceEarner = parseFloat(allOffer[i].originalTotalPrice) +  parseFloat(allOffer[i].shippingFee) + parseFloat(allOffer[i].taxFee) 
                 getBtcPrice = await axios.get('https://blockchain.info/tobtc?currency='+currency+'&value='+allOffer[i].totalPay+'&cors='+cors+'' )
-                    allOffer[i].btcPrice = getBtcPrice.data
-                    console.log(getBtcPrice.data)
+                btcPriceEarner = await axios.get('https://blockchain.info/tobtc?currency='+currency+'&value='+priceEarner+'&cors='+cors+'' )
+                allOffer[i].btcPrice = getBtcPrice.data
+                allOffer[i].priceEarner = priceEarner
+                allOffer[i].priceEarnerBtc = btcPriceEarner.data
+                   // console.log(getBtcPrice.data)
+                  //   console.log(allOffer)
                   }
                 res.status(200).send(allOffer)
             }
@@ -462,10 +591,12 @@ exports.getAllItemsInOffer= async(req, res) =>{
                 //const allmesages = await Items.getAllMessages(req.params.offerId)
                 let cors ="true"
                 let currency = "USD"
+                let priceEarner = parseFloat(allOfferItem.offer[0].originalTotalPrice) +  parseFloat(allOfferItem.offer[0].shippingFee) + parseFloat(allOfferItem.offer[0].taxFee) 
               getBtcPrice = await axios.get('https://blockchain.info/tobtc?currency='+currency+'&value='+allOfferItem.offer[0].totalPay+'&cors='+cors+'' )
-              getBtcPriceOriginal = await axios.get('https://blockchain.info/tobtc?currency='+currency+'&value='+allOfferItem.offer[0].originalTotalPrice+'&cors='+cors+'' )
+              btcPriceEarner = await axios.get('https://blockchain.info/tobtc?currency='+currency+'&value='+priceEarner+'&cors='+cors+'' )
               allOfferItem.offer[0].btcPrice = getBtcPrice.data
-              allOfferItem.offer[0].originalbtcPrice = getBtcPriceOriginal.data
+              allOfferItem.offer[0].priceEarner = priceEarner
+              allOfferItem.offer[0].priceEarnerBtc = btcPriceEarner.data
                  // console.log(getBtcPrice.data)
               
                 res.status(200).send(allOfferItem)
@@ -531,7 +662,7 @@ async function PersistOneByOne2(wishlistItems, wishlistTableId, wishlistId ){
                    let found = wishlist.match(re);
                  //  let found1 = wishlist.match(re2);
                   //console.log(found1);
-                  console.log(found);
+              //    console.log(found);
 
                 if (found === null ){ 
                     itemValid = false;
@@ -593,16 +724,16 @@ async function PersistOneByOne2(wishlistItems, wishlistTableId, wishlistId ){
 exports.acceptOfferTemp = async(req,res)=>{    
             try{ 
                 const isUserHasPendingOffer = await Items.UserHasPendingOffer(req.user.id)
-                console.log(isUserHasPendingOffer)
+              //  console.log(isUserHasPendingOffer)
                 if (isUserHasPendingOffer.length>0){
                     res.status(409).send({message:"User alaready has a pending accepted offer, complete the current offer and try again"})
                 }
             else{
         
-            console.log(req.user.id)
+            //console.log(req.user.id)
              let   status = "Accepted";
-             console.log(req.user.id)
-             console.log(req.params.offerId)
+            //  console.log(req.user.id)
+            //  console.log(req.params.offerId)
              let exactAcceptTime =  new Date();
             
           
@@ -611,7 +742,7 @@ exports.acceptOfferTemp = async(req,res)=>{
              if (createorder.affectedRows === 1){
 
                 const getwishlistbyid = await Items.findWishlistById( req.params.offerId)
-                console.log(getwishlistbyid[0].shopperId)
+               // console.log(getwishlistbyid[0].shopperId)
 
                  let text =  ''+req.user.username+' accepted offer'
                 const sendmessage = await Items.sendMessage( req.params.offerId, text, req.user.id, status, getwishlistbyid[0].shopperId)
@@ -666,7 +797,7 @@ exports.cancelOfferTemp = async(req,res)=>{
 
             
               //  console.log(getwishlistbyid[0].shopperId)
-
+                   console.log("yess")
                  const deletemessage = await Items.deleteMessage( req.params.offerId)
                 // console.log(getwishlistbyid.shopperId)
                 // let text =  ''+req.user.username+' cancel offer'
@@ -687,9 +818,6 @@ exports.cancelOfferTemp = async(req,res)=>{
             }
         }
     
-    
-
-
 
 // accept offer
 exports.acceptOffer = async(req,res)=>{
@@ -801,7 +929,8 @@ exports.getOrder = async(req, res) =>{
             const allOrder = await Items.getOrder(req.user.id, type )
             console.log(allOrder)
             if (allOrder.length > 0){
-               
+                let cors ="true"
+                let currency = "USD"
               //  console.log(allOrder[0])
                 for( var i = 0; i < allOrder.length; i++){
                  const allunread = await Items.getUnread(allOrder[i].id, req.user.id)
@@ -810,8 +939,12 @@ exports.getOrder = async(req, res) =>{
                   const imgurl = await Items.getImageUrl(allOrder[i].id )
                     console.log(imgurl[0])
                     allOrder[i].imgUrl  = imgurl
-                   let savedFeePercent = (parseFloat(allOrder[i].savedFee) /parseFloat(allOrder[i].originalTotalPrice) * 100)
-                   allOrder[i].savedFeePercent = savedFeePercent                  
+                    let priceEarner = parseFloat(allOrder[i].originalTotalPrice) +  parseFloat(allOrder[i].shippingFee) + parseFloat(allOrder[i].taxFee) 
+              // let savedFeePercent = (parseFloat(allOrder[i].savedFee) /parseFloat(allOrder[i].originalTotalPrice) * 100)
+              btcPriceEarner = await axios.get('https://blockchain.info/tobtc?currency='+currency+'&value='+priceEarner+'&cors='+cors+'' ) 
+              allOrder[i].priceEarner = priceEarner 
+              allOrder[i].priceEarnerBtc = btcPriceEarner.data
+              //allOrder[i].savedFeePercent = savedFeePercent                  
                   }
                   console.log(allOrder)
                 res.status(200).send(allOrder)
@@ -921,7 +1054,7 @@ exports.shopperConfirmDelivery = async(req,res)=>{
     const userDetails2 = await Members.findDetailsById(offerbyid[0].earnerId)
     if (userDetails2.length>0){
         
-        const totalPay = offerbyid[0].totalPay;
+        const totalPay = parseFloat(offerbyid[0].totalPay) - parseFloat(offerbyid[0].bitshopyFee) ;
         const initailBalanceBtc = userDetails2[0].walletBalanceBtc    
         const initailBalanceUsd = await getConversionInUsd(initailBalanceBtc) 
         const noOfTransactions = parseInt(userDetails2[0].noOfTransactions) + 1
@@ -933,7 +1066,7 @@ exports.shopperConfirmDelivery = async(req,res)=>{
     const finalBalanceUsd = await getConversionInUsd(finalBalanceBtc) 
     const userDetails3 = await Members.findDetailsById(req.user.id)
        const initialescrowWalletUsd = userDetails3[0].escrowWalletUsd
-       let  finalEscrowWalletUsd = parseFloat(initialescrowWalletUsd) - parseFloat(totalPay)
+       let  finalEscrowWalletUsd = parseFloat(initialescrowWalletUsd) - parseFloat(offerbyid[0].totalPay)
        const updateshopperescrow = await Members.updateShopperEscrow(finalEscrowWalletUsd, req.user.id) 
       const updatewallet = await Members.updateWallet(finalBalanceBtc, finalBalanceUsd, noOfTransactions, offerbyid[0].earnerId) 
      
