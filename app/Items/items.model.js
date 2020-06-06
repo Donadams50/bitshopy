@@ -165,14 +165,22 @@ const Items = function(){
    }
     
     // get all offer for a user to earn
-     Items.getAllOffer= async function(shopperId){
+     Items.getAllOffer= async function(shopperId,  from , to, country){
     try{
+      console.log(from)
+      console.log(to)
         let status = "Pending";
         let status3 = "Completed"
+        if(country === "all"){
     //    const result = await sql.query('SELECT * FROM wishlist where status=? ', [status])
-        const result = await sql.query('SELECT w.* , p.username, p.level FROM wishlist w, profile p where ((w.shopperId = p.id AND w.shopperId=? AND w.status!=?) OR (w.shopperId = p.id AND w.status=? ) ) ', [shopperId,status3,  status])
+        const result = await sql.query('SELECT w.* , p.username, p.level FROM wishlist w, profile p where ((w.shopperId = p.id AND w.shopperId=? AND w.status!=? AND ( totalPay BETWEEN ? AND ?)) OR (w.shopperId = p.id AND w.status=? AND ( totalPay BETWEEN ? AND ?)) ) ', [shopperId,status3, from , to,  status, from , to])
         const data= result[0]
         return data
+        }else{
+          const result = await sql.query('SELECT w.* , p.username, p.level FROM wishlist w, profile p where ((w.shopperId = p.id AND w.shopperId=? AND w.status!=? AND ( totalPay BETWEEN ? AND ?) AND country=?) OR (w.shopperId = p.id AND w.status=? AND ( totalPay BETWEEN ? AND ?) AND country=?) ) ', [shopperId,status3, from , to, country,status, from , to,country])
+        const data= result[0]
+        return data
+        }
     }catch(err){
      //   console.log(err)
         return (err)
@@ -200,7 +208,7 @@ const Items = function(){
         return (err)
     }
   }
-// get earner details
+// get earner detail
 
 Items.getEarner= async function(offerId, earnerId){
   try{

@@ -332,12 +332,11 @@ exports.modifyOffer = async(req,res)=>{
 
                   const userDetails2 = await Members.findDetailsById(shopperId)
                   if (userDetails2.length>0){
-                     console.log(userDetails2[0].walletBalanceBtc)
-                     console.log(userDetails2[0].walletBalanceBtc)
-                     console.log(userDetails2[0].noOfTransactions)
-                     console.log(userDetails2[0].escrowWalletUsd)
+
                 const getwishlistbyid = await Items.findWishlistById(offerId)
                 console.log(getwishlistbyid[0].totalPay)
+                console.log(userDetails2[0].walletBalanceBtc)
+                console.log(userDetails2[0].escrowWalletUsd)
                       let cors ="true"
                       let currency = "USD"
                       const initailBalanceBtc = userDetails2[0].walletBalanceBtc
@@ -353,11 +352,12 @@ exports.modifyOffer = async(req,res)=>{
                         let  initialescrowWalletUsd2 = parseFloat(initialescrowWalletUsd) - parseFloat(getwishlistbyid[0].totalPay)
                         let  finalEscrowWalletUsd = parseFloat(initialescrowWalletUsd2) + parseFloat(totalPay)
                         getUsdInBitcoin = await axios.get('https://blockchain.info/ticker')  
-                       console.log(initailBalanceBtc2)
-                        console.log(finalBalanceBtc)
-                        console.log(finalEscrowWalletUsd)
+                      
                           let finalBalanceUsd = parseFloat(getUsdInBitcoin.data.USD.last) * parseFloat(finalBalanceBtc) 
-                    
+                          console.log(finalBalanceUsd)
+                          console.log(finalBalanceBtc)
+                          console.log(finalEscrowWalletUsd)
+                          console.log(noOfTransactions)
                     const updatewallet = await Members.updateWalletEscrow(finalBalanceBtc, finalBalanceUsd, noOfTransactions, shopperId, finalEscrowWalletUsd) 
                 }else{
                     console.log("user not found")
@@ -479,7 +479,7 @@ exports.getAllOfferQualifiedFor= async(req, res) =>{
    console.log(to)
    console.log(country)
   if (type === "unchecked"){
-    const allOffer = await Items.getAllOffer(req.user.id )
+    const allOffer = await Items.getAllOffer(req.user.id, from , to, country)
     console.log(allOffer)
     if (allOffer.length >= 0){
         console.log(allOffer.length)
