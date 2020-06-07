@@ -323,12 +323,12 @@ exports.modifyOffer = async(req,res)=>{
             
             try{            
                
-                const updateOffer = await Items.updateOffer(  discount, originalTotalPrice, totalPay, bitshopyFee, savedFee, taxPaid, onlyPrime, shippingFee, taxFee , offerId)
+                
 
               // console.log(saveduser)
-            if (updateOffer.affectedRows > 0){
+            
                 console.log("ee");
-                console.log(updateOffer.insertId)
+                
 
                   const userDetails2 = await Members.findDetailsById(shopperId)
                   if (userDetails2.length>0){
@@ -359,6 +359,7 @@ exports.modifyOffer = async(req,res)=>{
                           console.log(finalEscrowWalletUsd)
                           console.log(noOfTransactions)
                     const updatewallet = await Members.updateWalletEscrow(finalBalanceBtc, finalBalanceUsd, noOfTransactions, shopperId, finalEscrowWalletUsd) 
+                    const updateOffer = await Items.updateOffer(  discount, originalTotalPrice, totalPay, bitshopyFee, savedFee, taxPaid, onlyPrime, shippingFee, taxFee , offerId)
                 }else{
                     console.log("user not found")
                 }
@@ -366,15 +367,6 @@ exports.modifyOffer = async(req,res)=>{
                   res.status(200).send({
                                 message:"offer created"
                             })
-            }else{
-                res.status(400).send({message:"Error while updating offer "})
-                }
-
-                        
-   
-            
-        
-
                     
                 
             }catch(err){
