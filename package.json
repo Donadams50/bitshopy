@@ -28,7 +28,7 @@
     "express": "^4.17.1",
     "express-fileupload": "^1.1.6",
     "express-router": "0.0.1",
-    "jsdom": "^16.2.2",
+    "jsdom": "^16.5.0",
     "jsonwebtoken": "^8.5.1",
     "mocha": "^7.1.0",
     "mysql2": "^2.1.0",
